@@ -1,0 +1,7 @@
+name: HeadWars
+version: '1.0-SNAPSHOT'
+main: win.codingboulder.headWars.HeadWars
+api-version: '1.21'
+authors: [ Michal737 ]
+description: A plugin that adds the HeadWars minigame
+website: https://github.com/michal7337
