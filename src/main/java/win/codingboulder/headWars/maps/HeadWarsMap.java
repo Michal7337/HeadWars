@@ -1,12 +1,11 @@
 package win.codingboulder.headWars.maps;
 
 import com.google.gson.GsonBuilder;
-import io.papermc.paper.math.BlockPosition;
-import io.papermc.paper.math.FinePosition;
-import io.papermc.paper.math.Position;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.apache.commons.lang3.tuple.Pair;
+import org.bukkit.DyeColor;
 import win.codingboulder.headWars.HeadWars;
+import win.codingboulder.headWars.util.Pair;
+import win.codingboulder.headWars.util.SimpleBlockPos;
+import win.codingboulder.headWars.util.SimpleFinePos;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -15,30 +14,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 
-@SuppressWarnings("UnstableApiUsage")
 public class HeadWarsMap {
 
     private final String ID;
     private String name;
     private String world;
 
-    private FinePosition lobbySpawn;
-    private Pair<FinePosition, FinePosition> mapBounds;
-    private ArrayList<BlockPosition> unprotectedBlocks;
-    private ArrayList<BlockPosition> protectedBlocks;
+    private SimpleFinePos lobbySpawn;
+    private final Pair<SimpleFinePos, SimpleFinePos> mapBounds;
+
+    private final ArrayList<SimpleBlockPos> protectedBlocks;
+    private final ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas;
 
     private int playersPerTeam;
-    private final ArrayList<HeadWarsTeam> teams;
+    private final HashMap<DyeColor, HeadWarsTeam> teams;
 
-    // <ButtonPos, SpawnPos>
-    private final HashMap<BlockPosition, FinePosition> clickGenerators;
+    private final ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators; // <ButtonPos, SpawnPos>
 
-    private final ArrayList<BlockPosition> emeraldGenerators;
+    private final ArrayList<SimpleBlockPos> emeraldGenerators;
 
-    private final ArrayList<UUID> itemShops;
-    private final ArrayList<UUID> upgradeShops;
+    private final HashMap<UUID, String> itemShops;
+    private final HashMap<UUID, String> upgradeShops;
 
-    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, ArrayList<HeadWarsTeam> teams, HashMap<BlockPosition, FinePosition> clickGenerators, ArrayList<BlockPosition> emeraldGenerators, ArrayList<UUID> itemShops, ArrayList<UUID> upgradeShops, FinePosition lobbySpawn, Pair<FinePosition, FinePosition> mapBounds, ArrayList<BlockPosition> unprotectedBlocks, ArrayList<BlockPosition> protectedBlocks) {
+    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, HashMap<DyeColor, HeadWarsTeam> teams, ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators, ArrayList<SimpleBlockPos> emeraldGenerators, HashMap<UUID, String> itemShops, HashMap<UUID, String> upgradeShops, SimpleFinePos lobbySpawn, Pair<SimpleFinePos, SimpleFinePos> mapBounds, ArrayList<SimpleBlockPos> protectedBlocks, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas) {
 
         this.ID = ID;
         this.name = name;
@@ -51,23 +49,21 @@ public class HeadWarsMap {
         this.upgradeShops = upgradeShops;
         this.lobbySpawn = lobbySpawn;
         this.mapBounds = mapBounds;
-        this.unprotectedBlocks = unprotectedBlocks;
         this.protectedBlocks = protectedBlocks;
+        this.protectedAreas = protectedAreas;
 
     }
 
-    public void createTeam(NamedTextColor teamColor) {
+    public void createTeam(DyeColor teamColor) {
 
-        HeadWarsTeam newTeam = new HeadWarsTeam(teamColor, Position.FINE_ZERO, Position.BLOCK_ZERO, Position.BLOCK_ZERO, Position.BLOCK_ZERO, Position.BLOCK_ZERO, new ArrayList<>());
-        teams.add(newTeam);
+        HeadWarsTeam newTeam = new HeadWarsTeam(teamColor, SimpleFinePos.zero(), SimpleBlockPos.zero(), SimpleBlockPos.zero(), SimpleBlockPos.zero(), SimpleBlockPos.zero(), new ArrayList<>());
+        teams.put(teamColor, newTeam);
 
     }
 
-    public HeadWarsTeam getTeam(NamedTextColor teamColor) {
+    public HeadWarsTeam getTeam(DyeColor teamColor) {
 
-        for (HeadWarsTeam team : teams) if (team.getTeamColor() == teamColor) return team;
-
-        return null;
+        return teams.get(teamColor);
 
     }
 
@@ -101,23 +97,23 @@ public class HeadWarsMap {
         return playersPerTeam;
     }
 
-    public ArrayList<HeadWarsTeam> teams() {
+    public HashMap<DyeColor, HeadWarsTeam> teams() {
         return teams;
     }
 
-    public HashMap<BlockPosition, FinePosition> clickGenerators() {
+    public ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators() {
         return clickGenerators;
     }
 
-    public ArrayList<BlockPosition> emeraldGenerators() {
+    public ArrayList<SimpleBlockPos> emeraldGenerators() {
         return emeraldGenerators;
     }
 
-    public ArrayList<UUID> itemShops() {
+    public HashMap<UUID, String> itemShops() {
         return itemShops;
     }
 
-    public ArrayList<UUID> upgradeShops() {
+    public HashMap<UUID, String> upgradeShops() {
         return upgradeShops;
     }
 
@@ -133,12 +129,23 @@ public class HeadWarsMap {
         this.playersPerTeam = playersPerTeam;
     }
 
-    public FinePosition lobbySpawn() {
+    public SimpleFinePos lobbySpawn() {
         return lobbySpawn;
     }
 
-    public void lobbySpawn(FinePosition lobbySpawn) {
+    public void lobbySpawn(SimpleFinePos lobbySpawn) {
         this.lobbySpawn = lobbySpawn;
     }
 
+    public Pair<SimpleFinePos, SimpleFinePos> mapBounds() {
+        return mapBounds;
+    }
+
+    public ArrayList<SimpleBlockPos> protectedBlocks() {
+        return protectedBlocks;
+    }
+
+    public ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas() {
+        return protectedAreas;
+    }
 }

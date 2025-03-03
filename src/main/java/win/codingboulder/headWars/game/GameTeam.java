@@ -21,7 +21,7 @@ public class GameTeam {
         players = new ArrayList<>();
         unbrokenHeads = new ArrayList<>();
 
-        unbrokenHeads.addAll(mapTeam.heads());
+        mapTeam.heads().forEach(head -> unbrokenHeads.add(head.asPosition()));
 
     }
 

@@ -23,7 +23,6 @@ public class HeadWarsGameManager {
         if (!mapWorld.exists()) return;
 
         File gameWorld = new File(HeadWars.getInstance().getServer().getWorldContainer(), "headwars-game-" + gameCount);
-        gameCount++;
 
         try {Files.copy(mapWorld.toPath(), gameWorld.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {throw new RuntimeException(e);}
@@ -32,6 +31,8 @@ public class HeadWarsGameManager {
 
         HeadWarsGame headWarsGame = new HeadWarsGame(world, map);
         activeGames.put(gameCount, headWarsGame);
+
+        gameCount++;
 
     }
 

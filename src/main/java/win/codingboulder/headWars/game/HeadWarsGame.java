@@ -1,21 +1,26 @@
 package win.codingboulder.headWars.game;
 
+import io.papermc.paper.math.BlockPosition;
+import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
 import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
-import org.bukkit.block.data.BlockData;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.scoreboard.*;
 import org.jetbrains.annotations.NotNull;
+import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.maps.HeadWarsMap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 @SuppressWarnings("UnstableApiUsage")
 public class HeadWarsGame implements Listener {
@@ -26,6 +31,7 @@ public class HeadWarsGame implements Listener {
     private final ArrayList<GameTeam> teams;
     private final ArrayList<Player> players;
     private Audience allPlayersAudience;
+    private final HashMap<BlockPosition, FinePosition> clickGenerators;
 
     int maxPlayers;
 
@@ -37,16 +43,30 @@ public class HeadWarsGame implements Listener {
         this.map = map;
         this.teams = new ArrayList<>();
         this.players = new ArrayList<>();
+        this.clickGenerators = new HashMap<>();
 
         initialise();
 
     }
 
+    /**
+     * An empty constructor ONLY FOR REGISTERING EVENTS, DO NOT USE
+     */
+    public HeadWarsGame() {
+        this.world = null;
+        this.map = null;
+        this.teams = new ArrayList<>();
+        this.players = new ArrayList<>();
+        this.clickGenerators = new HashMap<>();
+    }
+
     private void initialise() {
 
-        map.teams().forEach(team -> teams.add(new GameTeam(team))); //create game teams
+        map.teams().forEach((color, team) -> teams.add(new GameTeam(team))); //create game teams
         maxPlayers = teams.size() * map.getPlayersPerTeam();
         allPlayersAudience = Audience.audience(players);
+
+        map.clickGenerators().forEach(generator -> clickGenerators.put(generator.left().asPosition(), generator.right().asPosition()));
 
     }
 
@@ -61,7 +81,7 @@ public class HeadWarsGame implements Listener {
         if (teamAddingNumber >= teams.size()) teamAddingNumber = 0;
         players.add(player);
 
-        player.teleport(map.lobbySpawn().toLocation(world));
+        player.teleport(map.lobbySpawn().asPosition().toLocation(world));
 
         if (players.size() == maxPlayers) startGame();
 
@@ -73,7 +93,21 @@ public class HeadWarsGame implements Listener {
 
     }
 
-    private void updateScoreboard() {
+    private void createScoreboard() {
+
+        Scoreboard scoreboard = HeadWars.getInstance().getServer().getScoreboardManager().getNewScoreboard();
+        Objective objective = scoreboard.registerNewObjective("headwars", Criteria.DUMMY, MiniMessage.miniMessage().deserialize("<gradient:gold:yellow>HeadWars</gradient>"));
+
+        //objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        teams.forEach(team -> {
+
+            Team scTeam = scoreboard.registerNewTeam(team.mapTeam().getTeamColor().toString());
+            scTeam.addEntities(team.players().toArray(new Player[0]));
+            scTeam.setAllowFriendlyFire(true);
+            scTeam.setCanSeeFriendlyInvisibles(true);
+
+        });
 
 
 
@@ -88,10 +122,10 @@ public class HeadWarsGame implements Listener {
         Location location = event.getClickedBlock().getLocation();
 
         //If clicked the button generator
-        if (map.clickGenerators().containsKey(location.toBlock())) {
+        if (clickGenerators.containsKey(Position.block(location))) {
 
             Location buttonPos = location.toBlock().toLocation(world);
-            Location itemSpawnPos = map.clickGenerators().get(location.toBlock()).toLocation(world);
+            Location itemSpawnPos = clickGenerators.get(Position.block(location)).toLocation(world);
 
             Item item = world.createEntity(itemSpawnPos, Item.class);
             item.setItemStack(new ItemStack(Material.IRON_INGOT));

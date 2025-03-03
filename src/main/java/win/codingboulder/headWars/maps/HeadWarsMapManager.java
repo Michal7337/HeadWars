@@ -2,16 +2,16 @@ package win.codingboulder.headWars.maps;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import io.papermc.paper.math.Position;
-import org.apache.commons.lang3.tuple.Pair;
+import com.google.gson.JsonParseException;
 import win.codingboulder.headWars.HeadWars;
+import win.codingboulder.headWars.util.Pair;
+import win.codingboulder.headWars.util.SimpleFinePos;
 
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
 
-@SuppressWarnings("UnstableApiUsage")
 public class HeadWarsMapManager {
 
     private static final HashMap<String, HeadWarsMap> loadedMaps = new HashMap<>();
@@ -25,14 +25,14 @@ public class HeadWarsMapManager {
                 id,
                 name,
                 world,
-                2,
-                new ArrayList<>(),
+                1,
                 new HashMap<>(),
                 new ArrayList<>(),
                 new ArrayList<>(),
-                new ArrayList<>(),
-                Position.fine(0, 100, 0),
-                Pair.of(Position.fine(500, 300, 500), Position.fine(-500, -60, -500)),
+                new HashMap<>(),
+                new HashMap<>(),
+                SimpleFinePos.pos(0, 100, 0),
+                Pair.of(SimpleFinePos.pos(500, 300, 500), SimpleFinePos.pos(-500, -60, -500)),
                 new ArrayList<>(),
                 new ArrayList<>()
         );
@@ -68,7 +68,14 @@ public class HeadWarsMapManager {
 
             HeadWarsMap headWarsMap;
 
-            try { headWarsMap = gson.fromJson(new FileReader(mapFile), HeadWarsMap.class); } catch (FileNotFoundException e) { continue; }
+            try {
+                headWarsMap = gson.fromJson(new FileReader(mapFile), HeadWarsMap.class);
+            } catch (FileNotFoundException e) {
+                continue;
+            } catch (JsonParseException e) {
+                HeadWars.getInstance().getLogger().warning("Could not load map '" + mapFile.getName() + "'!");
+                continue;
+            }
 
             if (headWarsMap == null) continue;
             if (headWarsMap.getID() == null || headWarsMap.getID().isEmpty()) continue;

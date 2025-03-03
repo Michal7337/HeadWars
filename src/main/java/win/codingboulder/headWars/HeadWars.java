@@ -1,5 +1,6 @@
 package win.codingboulder.headWars;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
@@ -11,6 +12,7 @@ public final class HeadWars extends JavaPlugin {
     private static HeadWars instance;
 
     private static File mapsFolder;
+    private static File shopsFolder;
 
     @Override
     public void onEnable() {
@@ -21,7 +23,7 @@ public final class HeadWars extends JavaPlugin {
         //noinspection UnstableApiUsage
         HeadWarsCommand.registerCommand(getLifecycleManager());
 
-        getServer().getPluginManager().registerEvents(new HeadWarsGame(null, null), this);
+        getServer().getPluginManager().registerEvents(new HeadWarsGame(), this);
 
         HeadWarsMapManager.loadAllMaps();
 
@@ -39,10 +41,14 @@ public final class HeadWars extends JavaPlugin {
         mapsFolder = new File(getDataFolder(), "maps");
         if (mapsFolder.mkdir()) getLogger().info("Created maps folder");
 
+        shopsFolder = new File(getDataFolder(), "shops");
+        if (shopsFolder.mkdir()) getLogger().info("Created shops folder");
+
     }
 
     public static HeadWars getInstance() {return instance;}
 
     public static File getMapsFolder() {return mapsFolder;}
+    public static File getShopsFolder() {return shopsFolder;}
 
 }

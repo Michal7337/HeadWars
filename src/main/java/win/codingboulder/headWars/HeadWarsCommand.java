@@ -14,7 +14,7 @@ import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolve
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.DyeColor;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
@@ -24,6 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.maps.HeadWarsMap;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
+import win.codingboulder.headWars.util.ColorArgument;
+import win.codingboulder.headWars.util.Pair;
+import win.codingboulder.headWars.util.SimpleBlockPos;
+import win.codingboulder.headWars.util.SimpleFinePos;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -125,7 +129,7 @@ public class HeadWarsCommand {
                                                                     })))
 
                                                 .then(Commands.literal("addTeam")
-                                                        .then(Commands.argument("teamColor", ArgumentTypes.namedColor())
+                                                        .then(Commands.argument("teamColor", new ColorArgument())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -134,7 +138,7 @@ public class HeadWarsCommand {
                                                                         return 1;
                                                                     }
 
-                                                                    map.createTeam(context.getArgument("teamColor", NamedTextColor.class));
+                                                                    map.createTeam(context.getArgument("teamColor", DyeColor.class));
 
                                                                     map.updateMapFile();
 
@@ -143,7 +147,7 @@ public class HeadWarsCommand {
                                                                     })))
 
                                                 .then(Commands.literal("editTeam")
-                                                        .then(Commands.argument("teamToEdit", ArgumentTypes.namedColor())
+                                                        .then(Commands.argument("teamToEdit", new ColorArgument())
 
                                                                 .then(Commands.literal("spawnPosition")
                                                                         .then(Commands.argument("newSpawn", ArgumentTypes.finePosition(true))
@@ -155,14 +159,14 @@ public class HeadWarsCommand {
                                                                                         return 1;
                                                                                     }
 
-                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", NamedTextColor.class));
+                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", DyeColor.class));
                                                                                     if (team == null) {
                                                                                         context.getSource().getSender().sendRichMessage("<red>This team doesn't exist!");
                                                                                         return 1;
                                                                                     }
 
                                                                                     FinePositionResolver resolver = context.getArgument("newSpawn", FinePositionResolver.class);
-                                                                                    team.setSpawnPosition(resolver.resolve(context.getSource()));
+                                                                                    team.setSpawnPosition(SimpleFinePos.pos(resolver.resolve(context.getSource())));
 
                                                                                     map.updateMapFile();
 
@@ -181,7 +185,7 @@ public class HeadWarsCommand {
                                                                                                 return 1;
                                                                                             }
 
-                                                                                            HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", NamedTextColor.class));
+                                                                                            HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", DyeColor.class));
                                                                                             if (team == null) {
                                                                                                 context.getSource().getSender().sendRichMessage("<red>This team doesn't exist!");
                                                                                                 return 1;
@@ -190,7 +194,7 @@ public class HeadWarsCommand {
                                                                                             BlockPositionResolver positionResolver1 = context.getArgument("baseCorner1", BlockPositionResolver.class);
                                                                                             BlockPositionResolver positionResolver2 = context.getArgument("baseCorner2", BlockPositionResolver.class);
 
-                                                                                            team.setBasePosition(positionResolver1.resolve(context.getSource()), positionResolver2.resolve(context.getSource()));
+                                                                                            team.setBasePosition(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())), SimpleBlockPos.pos(positionResolver2.resolve(context.getSource())));
 
                                                                                             map.updateMapFile();
 
@@ -209,7 +213,7 @@ public class HeadWarsCommand {
                                                                                                 return 1;
                                                                                             }
 
-                                                                                            HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", NamedTextColor.class));
+                                                                                            HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", DyeColor.class));
                                                                                             if (team == null) {
                                                                                                 context.getSource().getSender().sendRichMessage("<red>This team doesn't exist!");
                                                                                                 return 1;
@@ -218,7 +222,7 @@ public class HeadWarsCommand {
                                                                                             BlockPositionResolver positionResolver1 = context.getArgument("basePerimeterCorner1", BlockPositionResolver.class);
                                                                                             BlockPositionResolver positionResolver2 = context.getArgument("basePerimeterCorner2", BlockPositionResolver.class);
 
-                                                                                            team.setBasePerimeter(positionResolver1.resolve(context.getSource()), positionResolver2.resolve(context.getSource()));
+                                                                                            team.setBasePerimeter(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())), SimpleBlockPos.pos(positionResolver2.resolve(context.getSource())));
 
                                                                                             map.updateMapFile();
 
@@ -236,14 +240,14 @@ public class HeadWarsCommand {
                                                                                         return 1;
                                                                                     }
 
-                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", NamedTextColor.class));
+                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", DyeColor.class));
                                                                                     if (team == null) {
                                                                                         context.getSource().getSender().sendRichMessage("<red>This team doesn't exist!");
                                                                                         return 1;
                                                                                     }
 
                                                                                     BlockPositionResolver positionResolver = context.getArgument("headToAdd", BlockPositionResolver.class);
-                                                                                    team.heads().add(positionResolver.resolve(context.getSource()));
+                                                                                    team.heads().add(SimpleBlockPos.pos(positionResolver.resolve(context.getSource())));
 
                                                                                     map.updateMapFile();
 
@@ -261,14 +265,14 @@ public class HeadWarsCommand {
                                                                                         return 1;
                                                                                     }
 
-                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", NamedTextColor.class));
+                                                                                    HeadWarsTeam team = map.getTeam(context.getArgument("teamToEdit", DyeColor.class));
                                                                                     if (team == null) {
                                                                                         context.getSource().getSender().sendRichMessage("<red>This team doesn't exist!");
                                                                                         return 1;
                                                                                     }
 
                                                                                     BlockPositionResolver positionResolver = context.getArgument("headToAdd", BlockPositionResolver.class);
-                                                                                    team.heads().remove(positionResolver.resolve(context.getSource()));
+                                                                                    team.heads().remove(SimpleBlockPos.pos(positionResolver.resolve(context.getSource())));
 
                                                                                     map.updateMapFile();
 
@@ -289,10 +293,15 @@ public class HeadWarsCommand {
                                                                                 return 1;
                                                                             }
 
-                                                                            BlockPositionResolver positionResolver1 = context.getArgument("buttonPosition", BlockPositionResolver.class);
-                                                                            FinePositionResolver positionResolver2 = context.getArgument("itemSpawnPosition", FinePositionResolver.class);
+                                                                            //BlockPositionResolver positionResolver1 = context.getArgument("buttonPosition", BlockPositionResolver.class);
+                                                                            //FinePositionResolver positionResolver2 = context.getArgument("itemSpawnPosition", FinePositionResolver.class);
 
-                                                                            map.clickGenerators().put(positionResolver1.resolve(context.getSource()), positionResolver2.resolve(context.getSource()));
+                                                                            //map.clickGenerators().put(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())), SimpleFinePos.pos(positionResolver2.resolve(context.getSource())));
+
+                                                                            map.clickGenerators().add(Pair.of(
+                                                                                SimpleBlockPos.fromCmdArgument("buttonPosition", context),
+                                                                                SimpleFinePos.fromCmdArgument("itemSpawnPosition", context))
+                                                                            );
 
                                                                             map.updateMapFile();
 
@@ -310,8 +319,11 @@ public class HeadWarsCommand {
                                                                         return 1;
                                                                     }
 
-                                                                    BlockPositionResolver positionResolver1 = context.getArgument("generatorButtonPosition", BlockPositionResolver.class);
-                                                                    map.clickGenerators().remove(positionResolver1.resolve(context.getSource()));
+                                                                    SimpleBlockPos blockPos = SimpleBlockPos.fromCmdArgument("generatorButtonPosition", context);
+
+                                                                    map.clickGenerators().stream()
+                                                                        .filter(entry -> entry.left().equals(blockPos))
+                                                                        .findFirst().ifPresent(entry -> map.clickGenerators().remove(entry));
 
                                                                     map.updateMapFile();
 
@@ -320,46 +332,48 @@ public class HeadWarsCommand {
                                                                 })))
 
                                                 .then(Commands.literal("addItemShop")
-                                                        .then(Commands.argument("itemShopEntity", ArgumentTypes.entity())
-                                                                .executes(context -> {
+                                                    .then(Commands.argument("itemShopEntity", ArgumentTypes.entity())
+                                                        .then(Commands.argument("itemShopID", StringArgumentType.word())
+                                                            .executes(context -> {
 
-                                                                    HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
-                                                                    if (map == null) {
-                                                                        context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
-                                                                        return 1;
+                                                                HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
+                                                                if (map == null) {
+                                                                    context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
+                                                                    return 1;
                                                                     }
 
                                                                     EntitySelectorArgumentResolver resolver = context.getArgument("itemShopEntity", EntitySelectorArgumentResolver.class);
-
                                                                     UUID shopUUID = resolver.resolve(context.getSource()).getFirst().getUniqueId();
-                                                                    map.itemShops().add(shopUUID);
+                                                                    String shopId = context.getArgument("itemShopID", String.class);
+                                                                    map.itemShops().put(shopUUID, shopId);
 
                                                                     map.updateMapFile();
 
                                                                     return 1;
 
-                                                                })))
+                                                            }))))
 
                                                 .then(Commands.literal("addUpgradeShop")
-                                                        .then(Commands.argument("upgradeShopEntity", ArgumentTypes.entity())
-                                                                .executes(context -> {
+                                                    .then(Commands.argument("upgradeShopEntity", ArgumentTypes.entity())
+                                                        .then(Commands.argument("upgradeShopID", StringArgumentType.word())
+                                                            .executes(context -> {
 
-                                                                    HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
-                                                                    if (map == null) {
-                                                                        context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
-                                                                        return 1;
+                                                                HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
+                                                                if (map == null) {
+                                                                    context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
+                                                                    return 1;
                                                                     }
 
                                                                     EntitySelectorArgumentResolver resolver = context.getArgument("upgradeShopEntity", EntitySelectorArgumentResolver.class);
-
                                                                     UUID shopUUID = resolver.resolve(context.getSource()).getFirst().getUniqueId();
-                                                                    map.upgradeShops().add(shopUUID);
+                                                                    String shopId = context.getArgument("upgradeShopID", String.class);
+                                                                    map.itemShops().put(shopUUID, shopId);
 
                                                                     map.updateMapFile();
 
                                                                     return 1;
 
-                                                                })))
+                                                            }))))
 
                                                 .then(Commands.literal("removeItemShop")
                                                         .then(Commands.argument("itemShopEntityToRemove", ArgumentTypes.entity())
@@ -414,7 +428,7 @@ public class HeadWarsCommand {
                                                                     }
 
                                                                     BlockPositionResolver positionResolver1 = context.getArgument("emeraldGeneratorPosition", BlockPositionResolver.class);
-                                                                    map.emeraldGenerators().add(positionResolver1.resolve(context.getSource()));
+                                                                    map.emeraldGenerators().add(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())));
 
                                                                     map.updateMapFile();
 
@@ -433,7 +447,7 @@ public class HeadWarsCommand {
                                                                     }
 
                                                                     BlockPositionResolver positionResolver1 = context.getArgument("emeraldGeneratorToRemovePosition", BlockPositionResolver.class);
-                                                                    map.emeraldGenerators().remove(positionResolver1.resolve(context.getSource()));
+                                                                    map.emeraldGenerators().remove(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())));
 
                                                                     map.updateMapFile();
 
@@ -452,6 +466,9 @@ public class HeadWarsCommand {
                                                                     }
 
                                                                     FinePositionResolver resolver = context.getArgument("lobbySpawnPosition", FinePositionResolver.class);
+                                                                    map.lobbySpawn(SimpleFinePos.pos(resolver.resolve(context.getSource())));
+
+                                                                    map.updateMapFile();
 
                                                                     return 1;
 
@@ -462,6 +479,18 @@ public class HeadWarsCommand {
                                 .then(Commands.literal("delete")
 
                                 )
+
+                            .then(Commands.literal("reload-maps")
+                                .executes(context -> {
+
+                                    HeadWars.getInstance().getServer().getScheduler().runTaskAsynchronously(HeadWars.getInstance(), task -> {
+                                        HeadWarsMapManager.loadAllMaps();
+                                        context.getSource().getSender().sendRichMessage("<green>Reloaded all maps!");
+                                    });
+
+                                    return 1;
+
+                                }))
 
                                 .then(Commands.literal("teleport-to-world")
                                         .then(Commands.argument("teleportMapWorld", StringArgumentType.word())
