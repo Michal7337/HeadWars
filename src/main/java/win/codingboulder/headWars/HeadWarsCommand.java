@@ -21,6 +21,9 @@ import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import win.codingboulder.headWars.game.shop.ItemShop;
+import win.codingboulder.headWars.game.shop.ShopConfigGUI;
+import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMap;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
@@ -490,35 +493,92 @@ public class HeadWarsCommand {
 
                                     return 1;
 
-                                }))
+                                })
+                            )
 
-                                .then(Commands.literal("teleport-to-world")
-                                        .then(Commands.argument("teleportMapWorld", StringArgumentType.word())
-                                                .executes(context -> {
+                            .then(Commands.literal("global-config")
 
-                                                    World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(context.getArgument("teleportMapWorld", String.class)));
-                                                    Player player = (Player) context.getSource().getSender();
-                                                    player.teleport(new Location(world, 0, 100, 0));
+                                .then(Commands.literal("itemshops")
 
+                                    .then(Commands.literal("create")
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                            .then(Commands.argument("title", StringArgumentType.string())
+                                                .then(Commands.argument("rows", IntegerArgumentType.integer(1, 6))
+                                                    .executes(context -> {
+
+                                                        ItemShop itemShop = ShopManager.createShop(
+                                                            context.getArgument("id", String.class),
+                                                            context.getArgument("title", String.class),
+                                                            context.getArgument("rows", Integer.class)
+                                                        );
+
+                                                        context.getSource().getSender().sendRichMessage("<green>Created a new item shop!");
+                                                        context.getSource().getSender().sendRichMessage("<green>Do /headwars map global-config itemshops edit <aqua>" + itemShop.id() + " <green>to edit the shop");
+
+                                                        return 1;
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    )
+                                    .then(Commands.literal("edit")
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                            .suggests((context, builder) -> {
+                                                ShopManager.itemShops.keySet().forEach(builder::suggest);
+                                                return builder.buildFuture();
+                                            })
+                                            .executes(context -> {
+
+                                                ItemShop itemShop = ShopManager.itemShops.get(context.getArgument("id", String.class));
+                                                if (itemShop == null) {
+                                                    context.getSource().getSender().sendRichMessage("<red>That shop doesn't exist!");
                                                     return 1;
+                                                }
+                                                if (!(context.getSource().getSender() instanceof Player player)) {
+                                                    context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                                    return 1;
+                                                }
+                                                //itemShop.openConfigGui(player);
+                                                player.openInventory(new ShopConfigGUI(itemShop).getInventory());
 
-                                                }))
+                                                return 1;
+                                            }))
+                                    )
 
                                 )
+
+                            )
+
+                            .then(Commands.literal("teleport-to-world")
+                                .then(Commands.argument("teleportMapWorld", StringArgumentType.word())
+                                    .executes(context -> {
+
+                                        World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(context.getArgument("teleportMapWorld", String.class)));
+                                        Player player = (Player) context.getSource().getSender();
+                                        player.teleport(new Location(world, 0, 100, 0));
+
+                                        return 1;
+
+                                        }
+                                    )
+                                )
+                            )
 
                         )
 
                         .then(Commands.literal("game")
 
-                                .then(Commands.literal("start")
-                                        .then(Commands.argument("map", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
-                                                .executes(context -> {
+                            .then(Commands.literal("start")
+                                .then(Commands.argument("map", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
+                                    .executes(context -> {
 
 
 
-                                                    return 1;
+                                        return 1;
 
-                                                }))))
+                                    })))
+                        )
+
 
 
                         .build()

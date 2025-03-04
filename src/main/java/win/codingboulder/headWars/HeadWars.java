@@ -1,8 +1,9 @@
 package win.codingboulder.headWars;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
 import win.codingboulder.headWars.game.HeadWarsGame;
+import win.codingboulder.headWars.game.shop.ShopConfigGUI;
+import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
 
 import java.io.File;
@@ -23,6 +24,8 @@ public final class HeadWars extends JavaPlugin {
         //noinspection UnstableApiUsage
         HeadWarsCommand.registerCommand(getLifecycleManager());
 
+        getServer().getPluginManager().registerEvents(new ShopConfigGUI(), this);
+        getServer().getPluginManager().registerEvents(new ShopGui(), this);
         getServer().getPluginManager().registerEvents(new HeadWarsGame(), this);
 
         HeadWarsMapManager.loadAllMaps();
