@@ -102,6 +102,12 @@ public class ItemShop implements Serializable {
 
     }
 
+    public void openShop(@NotNull Player player) { // add a HeadWarsGame here for handling game context
+
+        player.openInventory(new ShopGui(this, player).getInventory());
+
+    }
+
     public String id() {
         return id;
     }

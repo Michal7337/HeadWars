@@ -1,12 +1,17 @@
 package win.codingboulder.headWars;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import win.codingboulder.headWars.game.HeadWarsGame;
+import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopGui;
+import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
+import win.codingboulder.headWars.util.Util;
 
 import java.io.File;
+import java.io.IOException;
 
 public final class HeadWars extends JavaPlugin {
 
@@ -26,15 +31,24 @@ public final class HeadWars extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ShopConfigGUI(), this);
         getServer().getPluginManager().registerEvents(new ShopGui(), this);
-        getServer().getPluginManager().registerEvents(new HeadWarsGame(), this);
 
         HeadWarsMapManager.loadAllMaps();
+        ShopManager.loadAllShops();
+
 
     }
 
     @Override
     public void onDisable() {
-        // Plugin shutdown logic
+
+        HeadWarsGameManager.activeGames().forEach((integer, game) -> {
+            game.handleGameStop();
+        });
+
+        HeadWarsGameManager.worldFolders.forEach(world -> {
+            try { Util.deleteDirectory(world); } catch (IOException e) {throw new RuntimeException(e);}
+        });
+
     }
 
     private void setupFiles() {

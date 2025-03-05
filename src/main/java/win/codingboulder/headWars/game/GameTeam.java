@@ -11,18 +11,24 @@ import java.util.ArrayList;
 public class GameTeam {
 
     private final HeadWarsTeam mapTeam;
+    private final HeadWarsGame game;
     private final ArrayList<Player> players;
 
     private final ArrayList<BlockPosition> unbrokenHeads;
 
-    public GameTeam(@NotNull HeadWarsTeam mapTeam) {
+    public GameTeam(@NotNull HeadWarsTeam mapTeam, HeadWarsGame game) {
 
         this.mapTeam = mapTeam;
+        this.game = game;
         players = new ArrayList<>();
         unbrokenHeads = new ArrayList<>();
 
         mapTeam.heads().forEach(head -> unbrokenHeads.add(head.asPosition()));
 
+    }
+
+    public HeadWarsGame game() {
+        return game;
     }
 
     public HeadWarsTeam mapTeam() {

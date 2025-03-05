@@ -14,13 +14,15 @@ import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolve
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import org.bukkit.DyeColor;
-import org.bukkit.Location;
-import org.bukkit.World;
-import org.bukkit.WorldCreator;
+import org.bukkit.*;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import win.codingboulder.headWars.game.HeadWarsGame;
+import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.ItemShop;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopManager;
@@ -544,6 +546,96 @@ public class HeadWarsCommand {
                                                 return 1;
                                             }))
                                     )
+                                    .then(Commands.literal("open")
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                            .suggests((context, builder) -> {
+                                                ShopManager.itemShops.keySet().forEach(builder::suggest);
+                                                return builder.buildFuture();
+                                            })
+                                            .executes(context -> {
+
+                                                if (!(context.getSource().getSender() instanceof Player player)) return 1;
+                                                ItemShop itemShop = ShopManager.itemShops.get(context.getArgument("id", String.class));
+                                                if (itemShop == null) return 1;
+                                                itemShop.openShop(player);
+
+                                                return 1;
+                                            }))
+                                    )
+
+                                    .then(Commands.literal("edit-item")
+                                        .then(Commands.literal("action")
+                                            .then(Commands.literal("buy")
+                                                .then(Commands.argument("price", ArgumentTypes.itemStack())
+                                                    .then(Commands.argument("amount", IntegerArgumentType.integer(1))
+                                                        .executes(context -> {
+
+                                                            if (!(context.getSource().getSender() instanceof Player player)) {
+                                                                context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                                                return 1;
+                                                            }
+
+                                                            ItemStack itemToEdit = player.getInventory().getItem(EquipmentSlot.HAND);
+                                                            ItemStack price = context.getArgument("price", ItemStack.class);
+                                                            price.setAmount(context.getArgument("amount", Integer.class));
+
+                                                            ItemStack item = player.getInventory().getItem(EquipmentSlot.OFF_HAND);
+
+                                                            itemToEdit.editPersistentDataContainer(pdc -> {
+                                                                pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
+                                                                pdc.set(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY, price.serializeAsBytes());
+                                                                pdc.set(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY, item.serializeAsBytes());
+                                                            });
+
+                                                            return 1;
+                                                        })
+                                                        .then(Commands.argument("item-id", StringArgumentType.word())
+                                                            .executes(context -> {
+
+                                                                if (!(context.getSource().getSender() instanceof Player player)) {
+                                                                    context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                                                    return 1;
+                                                                }
+
+                                                                ItemStack itemToEdit = player.getInventory().getItem(EquipmentSlot.HAND);
+                                                                ItemStack price = context.getArgument("price", ItemStack.class);
+                                                                price.setAmount(context.getArgument("amount", Integer.class));
+
+
+                                                                itemToEdit.editPersistentDataContainer(pdc -> {
+                                                                    pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
+                                                                    pdc.set(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY, price.serializeAsBytes());
+                                                                    pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, context.getArgument("item-id", String.class));
+                                                                });
+
+                                                                return 1;
+                                                            })
+                                                        )
+                                                    )
+                                                )
+                                            )
+                                            .then(Commands.literal("open-menu")
+                                                .then(Commands.argument("menu", StringArgumentType.word())
+                                                    .executes(context -> {
+
+                                                        if (!(context.getSource().getSender() instanceof Player player)) {
+                                                            context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                                            return 1;
+                                                        }
+
+                                                        ItemStack item = player.getInventory().getItem(EquipmentSlot.HAND);
+
+                                                        item.editPersistentDataContainer(pdc -> {
+                                                            pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "open-menu");
+                                                            pdc.set(new NamespacedKey("headwars", "menu"), PersistentDataType.STRING, context.getArgument("menu", String.class));
+                                                        });
+
+                                                        return 1;
+                                                    })
+                                                )
+                                            )
+                                        )
+                                    )
 
                                 )
 
@@ -572,11 +664,53 @@ public class HeadWarsCommand {
                                 .then(Commands.argument("map", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
                                     .executes(context -> {
 
+                                        HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("map", String.class));
+                                        if (map == null) {
+                                            context.getSource().getSender().sendRichMessage("<red>That map doesn't exist or isn't loaded!");
+                                            return 1;
+                                        }
 
+                                        HeadWarsGameManager.startGame(map);
 
                                         return 1;
 
-                                    })))
+                                    })
+                                )
+                            )
+                            .then(Commands.literal("join")
+                                .then(Commands.argument("game", StringArgumentType.word())
+                                    .suggests((context, builder) -> {
+                                        HeadWarsGameManager.activeGameNames.keySet().forEach(builder::suggest);
+                                        return builder.buildFuture();
+                                    })
+                                    .executes(context -> {
+
+                                        if (!(context.getSource().getSender() instanceof Player player)) {
+                                            context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                            return 1;
+                                        }
+
+                                        HeadWarsGame game = HeadWarsGameManager.activeGameNames.get(context.getArgument("game", String.class));
+                                        if (game == null) {
+                                            player.sendRichMessage("<red>That game doesn't exist!");
+                                            return 1;
+                                        }
+
+                                        if (game.isStarted()) {
+                                            player.sendRichMessage("<red>That game has already started!");
+                                            return 1;
+                                        }
+
+                                        player.sendRichMessage("<gray>Joining game...");
+                                        game.addPlayer(player);
+                                        player.sendRichMessage("<green>You have joined the game!");
+
+                                        return 1;
+
+                                    })
+                                )
+                            )
+
                         )
 
 
