@@ -39,7 +39,7 @@ public class HeadWarsGameManager {
         try { Util.copyDirectory(mapWorld, gameWorld);
         } catch (IOException e) {HeadWars.getInstance().getLogger().warning("Failed to copy map world!");}
         worldFolders.add(gameWorld);
-        new File(gameWorld, "uid.dat").delete();
+        new File(gameWorld, "uid.dat").delete(); // delete this file because bukkit complains
 
         World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(gameWorld.getName()));
         if (world == null) {

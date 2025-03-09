@@ -1,9 +1,13 @@
 package win.codingboulder.headWars.game;
 
 import io.papermc.paper.math.BlockPosition;
+import net.kyori.adventure.audience.Audience;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
+import win.codingboulder.headWars.util.SimpleBlockPos;
 
 import java.util.ArrayList;
 
@@ -13,6 +17,9 @@ public class GameTeam {
     private final HeadWarsTeam mapTeam;
     private final HeadWarsGame game;
     private final ArrayList<Player> players;
+
+    public int generators = 0;
+    public int generatorLimit = 10;
 
     private final ArrayList<BlockPosition> unbrokenHeads;
 
@@ -41,6 +48,15 @@ public class GameTeam {
 
     public ArrayList<Player> players() {
         return players;
+    }
+
+    public Component getHeadStatusComponent() {
+
+        Component component = Component.text("");
+        for (SimpleBlockPos head : mapTeam().heads()) if (unbrokenHeads.contains(head.asPosition())) component = component.append(Component.text("✓", NamedTextColor.GREEN));
+        for (SimpleBlockPos head : mapTeam().heads()) if (!unbrokenHeads.contains(head.asPosition())) component = component.append(Component.text("✖", NamedTextColor.RED));
+        return component;
+
     }
 
 }

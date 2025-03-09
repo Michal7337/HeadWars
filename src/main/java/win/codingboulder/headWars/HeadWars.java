@@ -1,8 +1,6 @@
 package win.codingboulder.headWars;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
-import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopGui;
@@ -19,6 +17,8 @@ public final class HeadWars extends JavaPlugin {
 
     private static File mapsFolder;
     private static File shopsFolder;
+
+    public static String serverName = "CodingBoulder";
 
     @Override
     public void onEnable() {
@@ -41,9 +41,7 @@ public final class HeadWars extends JavaPlugin {
     @Override
     public void onDisable() {
 
-        HeadWarsGameManager.activeGames().forEach((integer, game) -> {
-            game.handleGameStop();
-        });
+        HeadWarsGameManager.activeGames().forEach((integer, game) -> game.handleGameStop());
 
         HeadWarsGameManager.worldFolders.forEach(world -> {
             try { Util.deleteDirectory(world); } catch (IOException e) {throw new RuntimeException(e);}
