@@ -6,6 +6,9 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.Position;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -42,6 +45,18 @@ public class SimpleBlockPos {
     public static @NotNull SimpleBlockPos fromCmdArgument(String argument, @NotNull CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         BlockPosition position = context.getArgument(argument, BlockPositionResolver.class).resolve(context.getSource());
         return new SimpleBlockPos(position.blockX(), position.blockY(), position.blockZ());
+    }
+
+    public Location asLocation(World world) {
+        return new Location(world, x, y, z);
+    }
+
+    public static SimpleBlockPos fromLocation(@NotNull Location location) {
+        return new SimpleBlockPos(location.blockX(), location.blockY(), location.blockZ());
+    }
+
+    public Block getBlock(World world) {
+        return new Location(world, x, y, z).getBlock();
     }
 
     public int x() {

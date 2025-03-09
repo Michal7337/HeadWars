@@ -34,9 +34,8 @@ public class HeadWarsMap {
     private final ArrayList<SimpleBlockPos> emeraldGenerators;
 
     private final HashMap<UUID, String> itemShops;
-    private final HashMap<UUID, String> upgradeShops;
 
-    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, HashMap<DyeColor, HeadWarsTeam> teams, ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators, ArrayList<SimpleBlockPos> emeraldGenerators, HashMap<UUID, String> itemShops, HashMap<UUID, String> upgradeShops, SimpleFinePos lobbySpawn, Pair<SimpleFinePos, SimpleFinePos> mapBounds, ArrayList<SimpleBlockPos> protectedBlocks, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas) {
+    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, HashMap<DyeColor, HeadWarsTeam> teams, ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators, ArrayList<SimpleBlockPos> emeraldGenerators, HashMap<UUID, String> itemShops, SimpleFinePos lobbySpawn, Pair<SimpleFinePos, SimpleFinePos> mapBounds, ArrayList<SimpleBlockPos> protectedBlocks, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas) {
 
         this.ID = ID;
         this.name = name;
@@ -46,7 +45,6 @@ public class HeadWarsMap {
         this.clickGenerators = clickGenerators;
         this.emeraldGenerators = emeraldGenerators;
         this.itemShops = itemShops;
-        this.upgradeShops = upgradeShops;
         this.lobbySpawn = lobbySpawn;
         this.mapBounds = mapBounds;
         this.protectedBlocks = protectedBlocks;
@@ -111,10 +109,6 @@ public class HeadWarsMap {
 
     public HashMap<UUID, String> itemShops() {
         return itemShops;
-    }
-
-    public HashMap<UUID, String> upgradeShops() {
-        return upgradeShops;
     }
 
     public void setName(String name) {

@@ -1,5 +1,6 @@
 package win.codingboulder.headWars.game;
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
@@ -15,11 +16,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityInteractEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -30,6 +33,8 @@ import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.shop.ItemShop;
 import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMap;
+import win.codingboulder.headWars.util.Pair;
+import win.codingboulder.headWars.util.SimpleBlockPos;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -49,6 +54,7 @@ public class HeadWarsGame implements Listener {
 
     private final HashMap<Player, GameTeam> playerTeams = new HashMap<>(); // utility map for easily accessing player teams
     private final HashMap<BlockPosition, FinePosition> clickGenerators;
+    //private final ArrayList<Block> protectedBlocks = new ArrayList<>();
 
     int maxPlayers;
 
@@ -112,13 +118,14 @@ public class HeadWarsGame implements Listener {
                 Title.Times.times(Duration.ZERO, Duration.ofMillis(1200), Duration.ZERO)
             ));
 
-            allPlayersAudience.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(5).build(), Sound.Emitter.self());
+            //allPlayersAudience.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(5).build(), Sound.Emitter.self());
+            players.forEach(player -> player.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(5).build(), Sound.Emitter.self()));
 
             seconds[0]--;
 
             if (seconds[0] == 0) task.cancel();
 
-        }, 10, 20);
+        }, 0, 20);
 
     }
 
@@ -158,6 +165,48 @@ public class HeadWarsGame implements Listener {
 
         players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has abruptly stopped and a lobby hasn't been configured")));
         Bukkit.unloadWorld(world, false);
+
+    }
+
+    public boolean isBlockProtected(Block block) {
+
+        for (Pair<SimpleBlockPos, SimpleBlockPos> area : map.protectedAreas()) {
+
+            int startX, endX;
+            if (area.left().x() < area.right().x()) {
+                startX = area.left().x();
+                endX = area.right().x();
+            } else {
+                startX = area.right().x();
+                endX = area.left().x();
+            }
+
+            int startY, endY;
+            if (area.left().y() < area.right().y()) {
+                startY = area.left().y();
+                endY = area.right().y();
+            } else {
+                startY = area.right().y();
+                endY = area.left().y();
+            }
+
+            int startZ, endZ;
+            if (area.left().z() < area.right().z()) {
+                startZ = area.left().z();
+                endZ = area.right().z();
+            } else {
+                startZ = area.right().z();
+                endZ = area.left().z();
+            }
+
+            if ((block.getX() >= startX && block.getX() <= endX) &&
+                (block.getY() >= startY && block.getY() <= endY) &&
+                (block.getZ() >= startZ && block.getZ() <= endZ)
+            ) return true;
+
+        }
+
+        return map.protectedBlocks().contains(SimpleBlockPos.fromLocation(block.getLocation()));
 
     }
 
@@ -211,6 +260,24 @@ public class HeadWarsGame implements Listener {
         ItemShop shop = ShopManager.itemShops.get(map.itemShops().get(entity.getUniqueId()));
         if (shop == null) return;
         shop.openShop(event.getPlayer());
+
+    }
+
+    @EventHandler
+    public void onBlockDestroy(@NotNull BlockDestroyEvent event) {
+
+        Block block = event.getBlock();
+        if (block.getWorld() != world) return;
+        if (isBlockProtected(block)) event.setCancelled(true);
+
+    }
+
+    @EventHandler
+    public void onBlockBreak(@NotNull BlockBreakEvent event) {
+
+        Block block = event.getBlock();
+        if (block.getWorld() != world) return;
+        if (isBlockProtected(block)) event.setCancelled(true);
 
     }
 

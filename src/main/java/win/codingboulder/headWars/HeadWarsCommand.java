@@ -298,11 +298,6 @@ public class HeadWarsCommand {
                                                                                 return 1;
                                                                             }
 
-                                                                            //BlockPositionResolver positionResolver1 = context.getArgument("buttonPosition", BlockPositionResolver.class);
-                                                                            //FinePositionResolver positionResolver2 = context.getArgument("itemSpawnPosition", FinePositionResolver.class);
-
-                                                                            //map.clickGenerators().put(SimpleBlockPos.pos(positionResolver1.resolve(context.getSource())), SimpleFinePos.pos(positionResolver2.resolve(context.getSource())));
-
                                                                             map.clickGenerators().add(Pair.of(
                                                                                 SimpleBlockPos.fromCmdArgument("buttonPosition", context),
                                                                                 SimpleFinePos.fromCmdArgument("itemSpawnPosition", context))
@@ -358,28 +353,6 @@ public class HeadWarsCommand {
 
                                                             }))))
 
-                                                .then(Commands.literal("addUpgradeShop")
-                                                    .then(Commands.argument("upgradeShopEntity", ArgumentTypes.entity())
-                                                        .then(Commands.argument("upgradeShopID", StringArgumentType.word())
-                                                            .executes(context -> {
-
-                                                                HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
-                                                                if (map == null) {
-                                                                    context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
-                                                                    return 1;
-                                                                    }
-
-                                                                    EntitySelectorArgumentResolver resolver = context.getArgument("upgradeShopEntity", EntitySelectorArgumentResolver.class);
-                                                                    UUID shopUUID = resolver.resolve(context.getSource()).getFirst().getUniqueId();
-                                                                    String shopId = context.getArgument("upgradeShopID", String.class);
-                                                                    map.itemShops().put(shopUUID, shopId);
-
-                                                                    map.updateMapFile();
-
-                                                                    return 1;
-
-                                                            }))))
-
                                                 .then(Commands.literal("removeItemShop")
                                                         .then(Commands.argument("itemShopEntityToRemove", ArgumentTypes.entity())
                                                                 .executes(context -> {
@@ -394,27 +367,6 @@ public class HeadWarsCommand {
 
                                                                     UUID shopUUID = resolver.resolve(context.getSource()).getFirst().getUniqueId();
                                                                     map.itemShops().remove(shopUUID);
-
-                                                                    map.updateMapFile();
-
-                                                                    return 1;
-
-                                                                })))
-
-                                                .then(Commands.literal("removeUpgradeShop")
-                                                        .then(Commands.argument("upgradeShopEntityToRemove", ArgumentTypes.entity())
-                                                                .executes(context -> {
-
-                                                                    HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
-                                                                    if (map == null) {
-                                                                        context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
-                                                                        return 1;
-                                                                    }
-
-                                                                    EntitySelectorArgumentResolver resolver = context.getArgument("upgradeShopEntityToRemove", EntitySelectorArgumentResolver.class);
-
-                                                                    UUID shopUUID = resolver.resolve(context.getSource()).getFirst().getUniqueId();
-                                                                    map.upgradeShops().remove(shopUUID);
 
                                                                     map.updateMapFile();
 
@@ -477,7 +429,48 @@ public class HeadWarsCommand {
 
                                                                     return 1;
 
-                                                                }))))
+                                                                })))
+
+                                            .then(Commands.literal("addProtectedArea")
+                                                .then(Commands.argument("pos1", ArgumentTypes.blockPosition())
+                                                    .then(Commands.argument("pos2", ArgumentTypes.blockPosition())
+                                                        .executes(context -> {
+
+                                                            HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
+                                                            if (map == null) {
+                                                                context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
+                                                                return 1;
+                                                            }
+
+                                                            SimpleBlockPos pos1 = SimpleBlockPos.fromCmdArgument("pos1", context);
+                                                            SimpleBlockPos pos2 = SimpleBlockPos.fromCmdArgument("pos2", context);
+
+                                                            map.protectedAreas().add(Pair.of(pos1, pos2));
+
+                                                            map.updateMapFile();
+
+                                                            return 1;
+
+                                                        }))))
+
+                                            .then(Commands.literal("addProtectedBlock")
+                                                .then(Commands.argument("block", ArgumentTypes.blockPosition())
+                                                    .executes(context -> {
+
+                                                        HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
+                                                        if (map == null) {
+                                                            context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
+                                                            return 1;
+                                                        }
+
+                                                        map.protectedBlocks().add(SimpleBlockPos.fromCmdArgument("block", context));
+                                                        map.updateMapFile();
+
+                                                        return 1;
+
+                                                    })))
+
+                                        )
 
                                 )
 

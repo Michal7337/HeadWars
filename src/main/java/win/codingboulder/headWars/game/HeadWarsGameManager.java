@@ -1,5 +1,6 @@
 package win.codingboulder.headWars.game;
 
+import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.WorldCreator;
 import org.bukkit.entity.Player;
@@ -21,26 +22,34 @@ public class HeadWarsGameManager {
 
     public static final ArrayList<File> worldFolders = new ArrayList<>();
 
-    private static int gameCount;
+    private static int gameCount = -1;
 
     public static void startGame(@NotNull HeadWarsMap map) {
+
+        gameCount++;
 
         File mapWorld = new File(HeadWars.getInstance().getServer().getWorldContainer(), map.getWorld());
         if (!mapWorld.exists()) return;
 
         File gameWorld = new File(HeadWars.getInstance().getServer().getWorldContainer(), "headwars-game-" + gameCount);
 
+        World w = Bukkit.getWorld(map.getWorld());
+        if (w != null) Bukkit.unloadWorld(w, true);
+
         try { Util.copyDirectory(mapWorld, gameWorld);
-        } catch (IOException e) {throw new RuntimeException(e);}
+        } catch (IOException e) {HeadWars.getInstance().getLogger().warning("Failed to copy map world!");}
         worldFolders.add(gameWorld);
+        new File(gameWorld, "uid.dat").delete();
 
         World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(gameWorld.getName()));
+        if (world == null) {
+            HeadWars.getInstance().getLogger().warning("Failed to load world for game 'headwars-game-" + gameCount +"'!");
+            return;
+        }
 
         HeadWarsGame headWarsGame = new HeadWarsGame(world, map);
         activeGames.put(gameCount, headWarsGame);
         activeGameNames.put(map.getID() + "-" + gameCount, headWarsGame);
-
-        gameCount++;
 
     }
 
