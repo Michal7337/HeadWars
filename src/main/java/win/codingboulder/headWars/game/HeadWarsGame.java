@@ -57,6 +57,8 @@ public class HeadWarsGame implements Listener {
     private final HashMap<Player, GameTeam> playerTeams = new HashMap<>(); // utility map for easily accessing player teams
     private final HashMap<Player, Scoreboard> playerScoreboards = new HashMap<>();
     private final HashMap<BlockPosition, FinePosition> clickGenerators;
+    private final ArrayList<GameTeam> liveTeams = new ArrayList<>();
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") private final ArrayList<Player> deadPlayers = new ArrayList<>();
 
     int maxPlayers;
 
@@ -140,6 +142,14 @@ public class HeadWarsGame implements Listener {
 
     };
 
+    private final BukkitRunnable runEveryTickTask = new BukkitRunnable() {
+
+        public void run() {
+
+        }
+
+    };
+
     private int teamAddingNumber;
     public void addPlayer(Player player) {
 
@@ -154,6 +164,7 @@ public class HeadWarsGame implements Listener {
         HeadWarsGameManager.playersInGames.put(player, this);
 
         player.teleport(map.lobbySpawn().asPosition().toLocation(world));
+        player.setRespawnLocation(map.lobbySpawn().asPosition().toLocation(world), true);
 
         if (players.size() == maxPlayers) startCountdown();
 
@@ -192,6 +203,7 @@ public class HeadWarsGame implements Listener {
             Title.Times.times(Duration.ofSeconds(1), Duration.ofSeconds(2), Duration.ofSeconds(1))
         ));
 
+        liveTeams.addAll(teams);
         playerTeams.forEach((player, gameTeam) -> player.teleport(gameTeam.mapTeam().getSpawnPosition().asPosition().toLocation(world)));
 
         createScoreboard();
@@ -269,6 +281,30 @@ public class HeadWarsGame implements Listener {
             playerScoreboards.put(player, scoreboard);
 
         });
+
+    }
+
+    private void checkWinCondition() {
+
+        for (GameTeam team : teams) {
+            if (team.players().isEmpty()) liveTeams.remove(team);
+        }
+
+        if (liveTeams.size() == 1) handleTeamWin(liveTeams.getFirst());
+
+    }
+
+    private void handleTeamWin(GameTeam team) {
+
+        allPlayersAudience.sendMessage(Component.text("-----------------------------", NamedTextColor.AQUA).appendNewline()
+            .append(Component.text("          HEAD WARS", NamedTextColor.GOLD, TextDecoration.BOLD)).appendNewline()
+            .append(Component.text("").appendNewline())
+            .append(Component.text("Team ", NamedTextColor.DARK_AQUA))
+            .append(Component.text(team.mapTeam().getTeamColor().toString().toLowerCase(), Util.getNamedColor(team.mapTeam().getTeamColor())))
+            .append(Component.text(" wins!", NamedTextColor.DARK_AQUA)).appendNewline()
+            .append(Component.text("").appendNewline())
+            .append(Component.text("-----------------------------", NamedTextColor.AQUA))
+        );
 
     }
 
@@ -355,6 +391,7 @@ public class HeadWarsGame implements Listener {
 
         if (event.getClickedBlock() == null) return;
         if (!event.getClickedBlock().getWorld().equals(world)) return;
+        if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
 
         Location location = event.getClickedBlock().getLocation();
 
@@ -363,14 +400,11 @@ public class HeadWarsGame implements Listener {
 
             event.setCancelled(true);
 
-            //Location buttonPos = location.toBlock().toLocation(world);
             Location itemSpawnPos = clickGenerators.get(Position.block(location)).toLocation(world);
 
             Item item = world.createEntity(itemSpawnPos, Item.class);
             item.setItemStack(new ItemStack(Material.IRON_INGOT));
             item.spawnAt(itemSpawnPos);
-
-            //buttonPos.getBlock().setType(buttonPos.getBlock().getType());
 
         }
 
@@ -382,6 +416,7 @@ public class HeadWarsGame implements Listener {
         Entity entity = event.getRightClicked();
 
         if (!this.map.itemShops().containsKey(entity.getUniqueId())) return;
+        if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
 
         event.setCancelled(true);
 
@@ -414,8 +449,17 @@ public class HeadWarsGame implements Listener {
                 if (team.players().contains(event.getPlayer())) {
                     event.setCancelled(true);
                 } else {
+                    event.setDropItems(false);
                     team.unbrokenHeads().remove(block.getLocation().toBlock());
-                    team.players().forEach(player -> player.showTitle(Title.title(Component.text("HEAD DESTROYED", NamedTextColor.RED), Component.text("You have " + team.unbrokenHeads().size() + "heads left!", NamedTextColor.RED))));
+                    team.players().forEach(player -> player.showTitle(Title.title(Component.text("HEAD DESTROYED", NamedTextColor.RED), Component.text("You have " + team.unbrokenHeads().size() + " heads left!", NamedTextColor.YELLOW))));
+
+                    allPlayersAudience.sendMessage(MiniMessage.miniMessage().deserialize("<bold><aqua>HEAD DESTROYED</bold><white> - <yellow>" + event.getPlayer().getName() + "<white> has destroyed team ")
+                        .append(Component.text(team.mapTeam().getTeamColor().toString().toLowerCase(), Util.getNamedColor(playerTeams.get(event.getPlayer()).mapTeam().getTeamColor())))
+                        .append(Component.text("'s head! They have ", NamedTextColor.WHITE))
+                        .append(Component.text(team.unbrokenHeads().size(), NamedTextColor.YELLOW))
+                        .append(Component.text(" heads left.", NamedTextColor.WHITE))
+                    );
+
                 }
 
             }
@@ -430,15 +474,19 @@ public class HeadWarsGame implements Listener {
         Player player = event.getPlayer();
         if (player.getLocation().getWorld() != world) return;
 
-        event.setCancelled(true);
-
         player.setGameMode(GameMode.SPECTATOR);
         player.getInventory().clear(); // todo: Add inventory resetting logic
 
         if (!playerTeams.get(player).unbrokenHeads().isEmpty()) {
 
+            deadPlayers.add(player);
+
             Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> {
+
+                deadPlayers.remove(player);
+                player.setGameMode(GameMode.SURVIVAL);
                 player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world)); // todo: Add actual respawning logic
+
             }, 100);
 
             AtomicInteger secs = new AtomicInteger(5);
@@ -453,7 +501,12 @@ public class HeadWarsGame implements Listener {
             }, 0, 20);
 
         } else {
+
             player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("You can't respawn anymore", NamedTextColor.RED)));
+            playerTeams.get(player).players().remove(player);
+            deadPlayers.add(player);
+            checkWinCondition();
+
         }
 
     }
