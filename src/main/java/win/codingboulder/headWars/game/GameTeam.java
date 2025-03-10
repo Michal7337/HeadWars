@@ -8,6 +8,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
 import win.codingboulder.headWars.util.SimpleBlockPos;
+import win.codingboulder.headWars.util.Util;
 
 import java.util.ArrayList;
 
@@ -55,9 +56,17 @@ public class GameTeam {
         Component component = Component.text("");
         for (SimpleBlockPos head : mapTeam().heads()) if (unbrokenHeads.contains(head.asPosition())) component = component.append(Component.text("✔", NamedTextColor.GREEN, TextDecoration.BOLD));
         for (SimpleBlockPos head : mapTeam().heads()) if (!unbrokenHeads.contains(head.asPosition())) component = component.append(Component.text("✖", NamedTextColor.RED));
-        component.append(Component.text(" " + players.size(), NamedTextColor.YELLOW));
+        component = component.append(Component.text(" " + players.size(), NamedTextColor.YELLOW));
         return component;
 
+    }
+
+    public Component getColoredTeamName() {
+        return Component.text(mapTeam.getTeamColor().toString().toLowerCase(), Util.getNamedColor(mapTeam.getTeamColor()));
+    }
+
+    public Component getColoredTeamName(boolean uppercase) {
+        return uppercase ? Component.text(mapTeam.getTeamColor().toString(), Util.getNamedColor(mapTeam.getTeamColor())) : Component.text(mapTeam.getTeamColor().toString().toLowerCase(), Util.getNamedColor(mapTeam.getTeamColor()));
     }
 
 }

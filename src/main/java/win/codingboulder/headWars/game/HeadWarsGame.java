@@ -20,6 +20,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -31,6 +32,7 @@ import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.shop.ItemShop;
 import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMap;
+import win.codingboulder.headWars.maps.HeadWarsTeam;
 import win.codingboulder.headWars.util.Pair;
 import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.Util;
@@ -58,11 +60,12 @@ public class HeadWarsGame implements Listener {
     private final HashMap<Player, Scoreboard> playerScoreboards = new HashMap<>();
     private final HashMap<BlockPosition, FinePosition> clickGenerators;
     private final ArrayList<GameTeam> liveTeams = new ArrayList<>();
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") private final ArrayList<Player> deadPlayers = new ArrayList<>();
+    private final ArrayList<Player> deadPlayers = new ArrayList<>();
 
     int maxPlayers;
 
     private boolean isStarted;
+    private boolean areBasesOpen;
 
     public HeadWarsGame(World world, HeadWarsMap map) {
 
@@ -146,6 +149,20 @@ public class HeadWarsGame implements Listener {
 
         public void run() {
 
+            if (!areBasesOpen) {
+
+                players.stream().filter(player -> !deadPlayers.contains(player)).forEach(player -> {
+
+                    HeadWarsTeam team = playerTeams.get(player).mapTeam();
+                    if (!isLocationInArea2D(player.getLocation(), Pair.of(team.getBasePerimeterPos1(), team.getBasePerimeterPos2()))) {
+                        player.teleport(team.getSpawnPosition().asPosition().toLocation(world));
+                        player.sendRichMessage("<red>You can't leave your base yet!");
+                    }
+
+                });
+
+            }
+
         }
 
     };
@@ -209,6 +226,7 @@ public class HeadWarsGame implements Listener {
         createScoreboard();
 
         runEverySecondTask.runTaskTimer(HeadWars.getInstance(), 0, 20);
+        runEveryTickTask.runTaskTimer(HeadWars.getInstance(), 0, 1);
 
     }
 
@@ -294,9 +312,9 @@ public class HeadWarsGame implements Listener {
 
     }
 
-    private void handleTeamWin(GameTeam team) {
+    private void handleTeamWin(@NotNull GameTeam team) {
 
-        allPlayersAudience.sendMessage(Component.text("-----------------------------", NamedTextColor.AQUA).appendNewline()
+        allPlayersAudience.sendMessage(Component.text("-----------------------------", NamedTextColor.AQUA).appendNewline().appendNewline()
             .append(Component.text("          HEAD WARS", NamedTextColor.GOLD, TextDecoration.BOLD)).appendNewline()
             .append(Component.text("").appendNewline())
             .append(Component.text("Team ", NamedTextColor.DARK_AQUA))
@@ -311,6 +329,7 @@ public class HeadWarsGame implements Listener {
     private void handleBasesOpenGameEvent() {
 
         allPlayersAudience.sendMessage(Component.text("Bases have been opened!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
+        areBasesOpen = true;
 
     }
 
@@ -329,6 +348,30 @@ public class HeadWarsGame implements Listener {
 
         players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has abruptly stopped and a lobby hasn't been configured")));
         Bukkit.unloadWorld(world, false);
+
+    }
+
+    public boolean isLocationInArea2D(Location location, @NotNull Pair<SimpleBlockPos, SimpleBlockPos> area) {
+
+        int startX, endX;
+        if (area.left().x() < area.right().x()) {
+            startX = area.left().x();
+            endX = area.right().x();
+        } else {
+            startX = area.right().x();
+            endX = area.left().x();
+        }
+
+        int startZ, endZ;
+        if (area.left().z() < area.right().z()) {
+            startZ = area.left().z();
+            endZ = area.right().z();
+        } else {
+            startZ = area.right().z();
+            endZ = area.left().z();
+        }
+
+        return (location.getX() >= startX && location.getX() <= endX) && (location.getZ() >= startZ && location.getZ() <= endZ);
 
     }
 
@@ -374,6 +417,11 @@ public class HeadWarsGame implements Listener {
 
     }
 
+    public boolean isBlockAHead(Block block) {
+        for (GameTeam team : teams) if (team.unbrokenHeads().contains(block.getLocation().toBlock())) return true;
+        return false;
+    }
+
     public boolean isStarted() {
         return isStarted;
     }
@@ -392,6 +440,7 @@ public class HeadWarsGame implements Listener {
         if (event.getClickedBlock() == null) return;
         if (!event.getClickedBlock().getWorld().equals(world)) return;
         if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
+        if (event.getAction().isLeftClick()) return;
 
         Location location = event.getClickedBlock().getLocation();
 
@@ -433,6 +482,19 @@ public class HeadWarsGame implements Listener {
         if (block.getWorld() != world) return;
         if (isBlockProtected(block)) event.setCancelled(true);
 
+        teams.forEach(team -> {
+            if (team.unbrokenHeads().contains(block.getLocation().toBlock())) event.setCancelled(true);
+        });
+
+    }
+
+    @EventHandler
+    public void onBlockExplode(@NotNull EntityExplodeEvent event) {
+
+        if (event.getLocation().getWorld() != world) return;
+        event.blockList().removeIf(this::isBlockProtected);
+        event.blockList().removeIf(this::isBlockAHead);
+
     }
 
     @EventHandler
@@ -454,7 +516,7 @@ public class HeadWarsGame implements Listener {
                     team.players().forEach(player -> player.showTitle(Title.title(Component.text("HEAD DESTROYED", NamedTextColor.RED), Component.text("You have " + team.unbrokenHeads().size() + " heads left!", NamedTextColor.YELLOW))));
 
                     allPlayersAudience.sendMessage(MiniMessage.miniMessage().deserialize("<bold><aqua>HEAD DESTROYED</bold><white> - <yellow>" + event.getPlayer().getName() + "<white> has destroyed team ")
-                        .append(Component.text(team.mapTeam().getTeamColor().toString().toLowerCase(), Util.getNamedColor(playerTeams.get(event.getPlayer()).mapTeam().getTeamColor())))
+                        .append(team.getColoredTeamName())
                         .append(Component.text("'s head! They have ", NamedTextColor.WHITE))
                         .append(Component.text(team.unbrokenHeads().size(), NamedTextColor.YELLOW))
                         .append(Component.text(" heads left.", NamedTextColor.WHITE))

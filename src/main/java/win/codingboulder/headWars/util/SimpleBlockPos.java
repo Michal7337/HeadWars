@@ -9,6 +9,8 @@ import io.papermc.paper.math.Position;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.util.Vector;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -51,7 +53,11 @@ public class SimpleBlockPos {
         return new Location(world, x, y, z);
     }
 
-    public static SimpleBlockPos fromLocation(@NotNull Location location) {
+    public Vector asBukkitVector() {
+        return new Vector(x, y, z);
+    }
+
+    public static @NotNull SimpleBlockPos fromLocation(@NotNull Location location) {
         return new SimpleBlockPos(location.blockX(), location.blockY(), location.blockZ());
     }
 
@@ -85,8 +91,11 @@ public class SimpleBlockPos {
 
     @Override
     public String toString() {
-        // {"x": x,"y": y,"z": z}
-        return "{\"x\": " + x + ",\"y\": " + y + ",\"z\": " + z + "}";
+        return "SimpleBlockPos{" +
+            "x=" + x +
+            ", y=" + y +
+            ", z=" + z +
+            '}';
     }
 
     @Override
