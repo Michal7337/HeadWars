@@ -628,6 +628,24 @@ public class HeadWarsCommand {
                                                 )
                                             )
                                         )
+
+                                        .then(Commands.literal("custom-id")
+                                            .then(Commands.argument("id", StringArgumentType.word())
+                                                .executes(context -> {
+
+                                                    if (!(context.getSource().getSender() instanceof Player player)) return 1;
+
+                                                    player.getInventory().getItemInMainHand().editPersistentDataContainer(pdc ->
+                                                        pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, context.getArgument("id", String.class)));
+
+                                                    player.sendRichMessage("<green>Custom item id set");
+
+                                                    return 1;
+
+                                                })
+                                            )
+                                        )
+
                                     )
 
                                 )

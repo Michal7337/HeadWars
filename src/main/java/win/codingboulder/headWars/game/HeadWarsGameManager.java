@@ -16,7 +16,7 @@ import java.util.HashMap;
 
 public class HeadWarsGameManager {
 
-    private static final HashMap<Integer, HeadWarsGame> activeGames = new HashMap<>();
+    private static final ArrayList<HeadWarsGame> activeGames = new ArrayList<>();
     public static final HashMap<String, HeadWarsGame> activeGameNames = new HashMap<>();
     public static final HashMap<Player, HeadWarsGame> playersInGames = new HashMap<>();
 
@@ -47,13 +47,13 @@ public class HeadWarsGameManager {
             return;
         }
 
-        HeadWarsGame headWarsGame = new HeadWarsGame(world, map);
-        activeGames.put(gameCount, headWarsGame);
+        HeadWarsGame headWarsGame = new HeadWarsGame(world, map, gameWorld);
+        activeGames.add(headWarsGame);
         activeGameNames.put(map.getID() + "-" + gameCount, headWarsGame);
 
     }
 
-    public static HashMap<Integer, HeadWarsGame> activeGames() {
+    public static ArrayList<HeadWarsGame> activeGames() {
         return activeGames;
     }
 

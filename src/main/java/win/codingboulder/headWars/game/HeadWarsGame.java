@@ -14,17 +14,21 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
 import org.jetbrains.annotations.NotNull;
@@ -37,10 +41,13 @@ import win.codingboulder.headWars.util.Pair;
 import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.Util;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -50,6 +57,7 @@ public class HeadWarsGame implements Listener {
 
     private final World world;
     private final HeadWarsMap map;
+    private final File worldFile;
 
     private final ArrayList<GameTeam> teams;
     private final ArrayList<Player> players;
@@ -58,22 +66,23 @@ public class HeadWarsGame implements Listener {
 
     private final HashMap<Player, GameTeam> playerTeams = new HashMap<>(); // utility map for easily accessing player teams
     private final HashMap<Player, Scoreboard> playerScoreboards = new HashMap<>();
-    private final HashMap<BlockPosition, FinePosition> clickGenerators;
+    private final HashMap<BlockPosition, FinePosition> clickGenerators = new HashMap<>();
     private final ArrayList<GameTeam> liveTeams = new ArrayList<>();
     private final ArrayList<Player> deadPlayers = new ArrayList<>();
+    private final HashMap<Block, ResourceGenerator> generators = new HashMap<>();
 
     int maxPlayers;
 
     private boolean isStarted;
     private boolean areBasesOpen;
 
-    public HeadWarsGame(World world, HeadWarsMap map) {
+    public HeadWarsGame(World world, HeadWarsMap map, File worldFile) {
 
         this.world = world;
         this.map = map;
         this.teams = new ArrayList<>();
         this.players = new ArrayList<>();
-        this.clickGenerators = new HashMap<>();
+        this.worldFile = worldFile;
 
         initialise();
 
@@ -324,12 +333,18 @@ public class HeadWarsGame implements Listener {
             .append(Component.text("-----------------------------", NamedTextColor.AQUA))
         );
 
+        allPlayersAudience.sendMessage(Component.text("Instance closes in 30 seconds", NamedTextColor.GRAY));
+
+        Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), this::handleGameStop, 600);
+
     }
 
     private void handleBasesOpenGameEvent() {
 
         allPlayersAudience.sendMessage(Component.text("Bases have been opened!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
         areBasesOpen = true;
+
+        map.emeraldGenerators().forEach(pos -> new ResourceGenerator(pos.getBlock(world), ItemStack.of(Material.EMERALD), 2400, "emerald_generator"));
 
     }
 
@@ -346,11 +361,19 @@ public class HeadWarsGame implements Listener {
 
     public void handleGameStop() {
 
-        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has abruptly stopped and a lobby hasn't been configured")));
+        players.forEach(HeadWarsGameManager.playersInGames::remove);
+        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
+
         Bukkit.unloadWorld(world, false);
+        try { Util.deleteDirectory(worldFile); } catch (IOException e) {HeadWars.getInstance().getLogger().warning("An error occurred while deleting game world!");}
+
+        HeadWarsGameManager.activeGames().remove(this);
+        HeadWarsGameManager.activeGameNames.remove(worldFile.getName());
+        HeadWarsGameManager.worldFolders.remove(worldFile);
 
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean isLocationInArea2D(Location location, @NotNull Pair<SimpleBlockPos, SimpleBlockPos> area) {
 
         int startX, endX;
@@ -434,13 +457,122 @@ public class HeadWarsGame implements Listener {
         return playerTeams;
     }
 
+    private final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
+    private void handleBlockUpgrade(Block block, Player player) {
+
+        boolean isGenCarpet = false;
+        for (Block block1 : generators.keySet()) if (block == block1.getRelative(BlockFace.UP)) {isGenCarpet = true; break;}
+        if (isGenCarpet) block = block.getRelative(BlockFace.DOWN);
+
+        if (generators.containsKey(block)) {
+
+            ResourceGenerator generator = generators.get(block);
+            if (generator == null) return;
+
+            if (generator.id().equals("emerald_generator")) return;
+
+            if (generator.getTier() >= 3) {
+                player.sendActionBar(Component.text("This generator is already at maximum tier!", NamedTextColor.RED));
+                return;
+            }
+            if (block.equals(pendingConfirmUpgrades.get(player))) {
+
+                // Check if player has items and do upgrade logic
+
+                pendingConfirmUpgrades.remove(player);
+                ItemStack cost = ResourceGenerator.genUpgradeCost.get(generator.id()).get(generator.getTier());
+                if (!player.getInventory().containsAtLeast(cost, cost.getAmount())) {
+                    player.sendActionBar(Component.text("You don't have enough resources!", NamedTextColor.RED));
+                    return;
+                }
+
+                player.getInventory().removeItem(cost);
+
+                ResourceGenerator newGen = generator.setGenTime(ResourceGenerator.genSpeeds.get(generator.id()).get(generator.getTier() + 1));
+                newGen.setTier(generator.getTier() + 1);
+                block.setType(ResourceGenerator.genTierMaterials.get(newGen.id()).get(newGen.getTier()));
+
+                generators.put(block, newGen);
+
+                player.playSound(Sound.sound().type(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP).build(), Sound.Emitter.self());
+
+            } else {
+
+                // Display the confirmation message
+                player.sendActionBar(ResourceGenerator.genUpgradeMessages.get(generator.id()).get(generator.getTier()));
+                pendingConfirmUpgrades.put(player, block);
+
+            }
+
+        }
+
+    }
+
+    @EventHandler
+    public void onBlockPlace(@NotNull BlockPlaceEvent event) {
+
+        Block block = event.getBlock();
+
+        if (block.getWorld() != world) return;
+
+        String id = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
+        if (id == null) return;
+
+        ResourceGenerator generator;
+        Block blockAbove = block.getRelative(BlockFace.UP);
+        if (!blockAbove.isEmpty()) {event.setCancelled(true); return;}
+
+        GameTeam team = playerTeams.get(event.getPlayer());
+        if (team.generators >= team.generatorLimit) {
+            event.setCancelled(true);
+            event.getPlayer().sendActionBar(Component.text("You can't place any more generators!", NamedTextColor.RED));
+            return;
+        }
+
+        if (!isLocationInArea2D(block.getLocation(), Pair.of(team.mapTeam().getBasePerimeterPos1(), team.mapTeam().getBasePerimeterPos2()))) {
+            event.setCancelled(true);
+            event.getPlayer().sendActionBar(Component.text("You can't place generators outside of your base!", NamedTextColor.RED));
+            return;
+        }
+
+        team.generators ++;
+
+        switch (id) {
+            case "iron_generator" -> {
+                generator = new ResourceGenerator(block, ItemStack.of(Material.IRON_INGOT), 20, "iron_generator");
+                block.setType(Material.LIGHT_GRAY_STAINED_GLASS);
+                blockAbove.setType(Material.WHITE_CARPET);
+            }
+            case "gold_generator" -> {
+                generator = new ResourceGenerator(block, ItemStack.of(Material.GOLD_INGOT), 40, "gold_generator");
+                block.setType(Material.YELLOW_STAINED_GLASS);
+                blockAbove.setType(Material.YELLOW_CARPET);
+            }
+            case "diamond_generator" -> {
+                generator = new ResourceGenerator(block, ItemStack.of(Material.DIAMOND), 60, "diamond_generator");
+                block.setType(Material.LIGHT_BLUE_STAINED_GLASS);
+                blockAbove.setType(Material.LIGHT_BLUE_CARPET);
+            }
+            default -> { return; }
+        }
+
+        generator.spawningItem = event.getItemInHand().asOne();
+        generator.placingPlayer = event.getPlayer();
+        generator.setTier(1);
+
+        generators.put(event.getBlock(), generator);
+
+    }
+
     @EventHandler
     public void onBlockRightClick(@NotNull PlayerInteractEvent event) {
 
         if (event.getClickedBlock() == null) return;
+        if (event.getAction().isLeftClick()) return;
         if (!event.getClickedBlock().getWorld().equals(world)) return;
         if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
-        if (event.getAction().isLeftClick()) return;
+
+        if (event.getPlayer().isSneaking() && Objects.equals(event.getHand(), EquipmentSlot.HAND)) handleBlockUpgrade(event.getClickedBlock(), event.getPlayer());
 
         Location location = event.getClickedBlock().getLocation();
 
@@ -482,6 +614,15 @@ public class HeadWarsGame implements Listener {
         if (block.getWorld() != world) return;
         if (isBlockProtected(block)) event.setCancelled(true);
 
+        generators.forEach((bl, gen) -> {
+            if (block == bl.getRelative(BlockFace.UP)) event.setCancelled(true);
+            if (block == bl) {
+                event.setWillDrop(false);
+                world.dropItem(block.getLocation(), gen.spawningItem);
+                gen.cancel();
+            }
+        });
+
         teams.forEach(team -> {
             if (team.unbrokenHeads().contains(block.getLocation().toBlock())) event.setCancelled(true);
         });
@@ -494,6 +635,16 @@ public class HeadWarsGame implements Listener {
         if (event.getLocation().getWorld() != world) return;
         event.blockList().removeIf(this::isBlockProtected);
         event.blockList().removeIf(this::isBlockAHead);
+        //generators
+        event.blockList().forEach(block -> {
+            if (generators.containsKey(block)) {
+                block.setType(Material.AIR);
+                generators.get(block).cancel();
+                generators.remove(block);
+                playerTeams.get(generators.get(block).placingPlayer).generators --;
+            }
+            generators.forEach((bl, gen) -> { if (block == bl.getRelative(BlockFace.UP)) block.setType(Material.AIR); });
+        });
 
     }
 
@@ -503,6 +654,18 @@ public class HeadWarsGame implements Listener {
         Block block = event.getBlock();
         if (block.getWorld() != world) return;
         if (isBlockProtected(block)) event.setCancelled(true);
+
+        if (generators.containsKey(block)) {
+
+            ResourceGenerator gen = generators.get(block);
+            event.setDropItems(false);
+            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> world.dropItem(block.getLocation(), gen.spawningItem), 1);
+            //event.getPlayer().give(gen.spawningItem);
+            gen.cancel();
+            generators.remove(block);
+            playerTeams.get(gen.placingPlayer).generators --;
+
+        } else if (generators.containsKey(block.getRelative(BlockFace.DOWN))) event.setCancelled(true);
 
         teams.forEach(team -> {
 
@@ -537,7 +700,7 @@ public class HeadWarsGame implements Listener {
         if (player.getLocation().getWorld() != world) return;
 
         player.setGameMode(GameMode.SPECTATOR);
-        player.getInventory().clear(); // todo: Add inventory resetting logic
+        player.getInventory().clear();
 
         if (!playerTeams.get(player).unbrokenHeads().isEmpty()) {
 
@@ -547,7 +710,7 @@ public class HeadWarsGame implements Listener {
 
                 deadPlayers.remove(player);
                 player.setGameMode(GameMode.SURVIVAL);
-                player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world)); // todo: Add actual respawning logic
+                player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world));
 
             }, 100);
 
