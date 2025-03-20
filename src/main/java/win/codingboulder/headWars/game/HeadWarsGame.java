@@ -1,6 +1,9 @@
 package win.codingboulder.headWars.game;
 
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.DyedItemColor;
+import io.papermc.paper.datacomponent.item.Unbreakable;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
@@ -24,10 +27,12 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
@@ -126,6 +131,7 @@ public class HeadWarsGame implements Listener {
                 nextEvent = "Heads Destroyed";
                 nextEventTime = 300;
             } else if (gameTimer == 1500) { // heads destroyed event at 25m
+                handleHeadsDestroyedGameEvent();
                 nextEvent = "Game End";
                 nextEventTime = 1800;
             }
@@ -231,6 +237,30 @@ public class HeadWarsGame implements Listener {
 
         liveTeams.addAll(teams);
         playerTeams.forEach((player, gameTeam) -> player.teleport(gameTeam.mapTeam().getSpawnPosition().asPosition().toLocation(world)));
+
+        playerTeams.forEach((player, team) -> {
+
+            ItemStack helmet = ItemStack.of(Material.LEATHER_HELMET);
+            helmet.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(team.mapTeam().getTeamColor().getColor(), false));
+            helmet.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
+            player.getInventory().setItem(EquipmentSlot.HEAD, helmet);
+
+            ItemStack chestplate = ItemStack.of(Material.LEATHER_CHESTPLATE);
+            chestplate.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(team.mapTeam().getTeamColor().getColor(), false));
+            chestplate.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
+            player.getInventory().setItem(EquipmentSlot.CHEST, chestplate);
+
+            ItemStack leggings = ItemStack.of(Material.LEATHER_LEGGINGS);
+            leggings.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(team.mapTeam().getTeamColor().getColor(), false));
+            leggings.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
+            player.getInventory().setItem(EquipmentSlot.LEGS, leggings);
+
+            ItemStack boots = ItemStack.of(Material.LEATHER_BOOTS);
+            boots.setData(DataComponentTypes.DYED_COLOR, DyedItemColor.dyedItemColor(team.mapTeam().getTeamColor().getColor(), false));
+            boots.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
+            player.getInventory().setItem(EquipmentSlot.FEET, boots);
+
+        });
 
         createScoreboard();
 
@@ -727,7 +757,15 @@ public class HeadWarsGame implements Listener {
         if (player.getLocation().getWorld() != world) return;
 
         player.setGameMode(GameMode.SPECTATOR);
-        player.getInventory().clear();
+        PlayerInventory inventory = player.getInventory();
+
+        ItemStack[] armor = {
+            inventory.getItem(EquipmentSlot.HEAD).clone(),
+            inventory.getItem(EquipmentSlot.CHEST).clone(),
+            inventory.getItem(EquipmentSlot.LEGS).clone(),
+            inventory.getItem(EquipmentSlot.FEET).clone()
+        };
+        inventory.clear();
 
         if (!playerTeams.get(player).unbrokenHeads().isEmpty()) {
 
@@ -738,6 +776,11 @@ public class HeadWarsGame implements Listener {
                 deadPlayers.remove(player);
                 player.setGameMode(GameMode.SURVIVAL);
                 player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world));
+
+                inventory.setItem(EquipmentSlot.HEAD, armor[0]);
+                inventory.setItem(EquipmentSlot.CHEST, armor[1]);
+                inventory.setItem(EquipmentSlot.LEGS, armor[2]);
+                inventory.setItem(EquipmentSlot.FEET, armor[3]);
 
             }, 100);
 
@@ -760,6 +803,18 @@ public class HeadWarsGame implements Listener {
             checkWinCondition();
 
         }
+
+    }
+
+    @EventHandler
+    public void onInventoryClick(@NotNull InventoryClickEvent event) {
+
+        Player player = (Player) event.getWhoClicked();
+        if (!players.contains(player)) return;
+
+        if (event.getClickedInventory() == player.getInventory() && ( event.getSlot() == 39 ||
+            event.getSlot() == 38 || event.getSlot() == 37 || event.getSlot() == 36)
+        ) event.setCancelled(true);
 
     }
 

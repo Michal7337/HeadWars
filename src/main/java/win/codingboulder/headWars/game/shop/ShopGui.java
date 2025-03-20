@@ -15,9 +15,9 @@ import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
-import win.codingboulder.headWars.game.shop.items.tool_pickaxe;
-import win.codingboulder.headWars.game.shop.items.wool;
+import win.codingboulder.headWars.game.shop.items.*;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
@@ -88,6 +88,7 @@ public class ShopGui implements InventoryHolder, Listener {
             ItemStack itemPrice;
             byte[] priceEnc = pdc.get(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY);
             if (priceEnc == null) itemPrice = ItemStack.of(Material.AIR);
+            else if (Arrays.equals(priceEnc, new byte[1])) itemPrice = ItemStack.of(Material.AIR);
             else itemPrice = ItemStack.deserializeBytes(priceEnc);
 
             if (pdc.has(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY)) {
@@ -117,7 +118,7 @@ public class ShopGui implements InventoryHolder, Listener {
                 }
 
                 ItemStack item = handleCustomItemBuy(clickedItem, player, inventory);
-                player.give(item);
+                if (item.getType()!= Material.AIR) player.give(item);
 
                 player.getInventory().removeItem(itemPrice);
                 player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 2, 2);
@@ -141,6 +142,11 @@ public class ShopGui implements InventoryHolder, Listener {
     static {
         customItemHandlers.put("wool", new wool());
         customItemHandlers.put("tool_pickaxe", new tool_pickaxe());
+
+        customItemHandlers.put("armor_helmet", new armor_helmet());
+        customItemHandlers.put("armor_chestplate", new armor_chestplate());
+        customItemHandlers.put("armor_leggings", new armor_leggings());
+        customItemHandlers.put("armor_boots", new armor_boots());
     }
 
     public @NotNull ItemStack handleCustomItemRender(@NotNull ItemStack shopItem, Player player) {

@@ -1,6 +1,7 @@
 package win.codingboulder.headWars.game.shop.items;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
 import io.papermc.paper.datacomponent.item.Unbreakable;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -20,6 +21,7 @@ import win.codingboulder.headWars.game.shop.ShopGui;
 
 import java.util.List;
 
+@SuppressWarnings("UnstableApiUsage")
 public class tool_pickaxe implements CustomShopItem {
 
     public ItemStack handleRender(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game) {
@@ -29,6 +31,7 @@ public class tool_pickaxe implements CustomShopItem {
             pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, "tool_pickaxe");
             pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
         });
+        item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).build());
 
         if (player.getInventory().contains(Material.WOODEN_PICKAXE)) {
 
