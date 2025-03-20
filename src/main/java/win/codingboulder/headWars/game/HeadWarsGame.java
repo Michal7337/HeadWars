@@ -652,7 +652,7 @@ public class HeadWarsGame implements Listener {
         if (Objects.equals(player.getInventory().getItemInMainHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "item"), PersistentDataType.STRING), "fireball")) {
             event.setCancelled(true);
             player.getInventory().removeItem(player.getInventory().getItemInMainHand().asOne());
-            player.launchProjectile(Fireball.class, player.getLocation().getDirection());
+            player.launchProjectile(Fireball.class, player.getLocation().getDirection().multiply(3));
         }
 
         if (event.getClickedBlock() == null) return;

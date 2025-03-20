@@ -24,13 +24,8 @@ import java.util.Objects;
 public class ShopGui implements InventoryHolder, Listener {
 
     private final Inventory inventory;
-    private final ItemShop itemShop;
-    private final Player player;
 
-    public ShopGui(@NotNull ItemShop itemShop, Player player) { // add a HeadWarsGame here for game context
-
-        this.itemShop = itemShop;
-        this.player = player;
+    public ShopGui(@NotNull ItemShop itemShop, Player player) {
 
         inventory = HeadWars.getInstance().getServer().createInventory(this, itemShop.rows()*9, MiniMessage.miniMessage().deserialize(itemShop.title()));
 
@@ -54,8 +49,6 @@ public class ShopGui implements InventoryHolder, Listener {
      */
     public ShopGui() {
         inventory = null;
-        itemShop = null;
-        player = null;
     }
 
     public @NotNull Inventory getInventory() {
