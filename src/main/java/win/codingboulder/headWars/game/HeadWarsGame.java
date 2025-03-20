@@ -18,13 +18,12 @@ import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -34,8 +33,11 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scoreboard.*;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.shop.ItemShop;
@@ -262,6 +264,8 @@ public class HeadWarsGame implements Listener {
 
         });
 
+        players.forEach(player -> player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 10, true, false)));
+
         createScoreboard();
 
         runEverySecondTask.runTaskTimer(HeadWars.getInstance(), 0, 20);
@@ -400,6 +404,15 @@ public class HeadWarsGame implements Listener {
         HeadWarsGameManager.activeGames().remove(this);
         HeadWarsGameManager.activeGameNames.remove(worldFile.getName());
         HeadWarsGameManager.worldFolders.remove(worldFile);
+
+    }
+
+    public void handleForceStop() {
+
+        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
+
+        Bukkit.unloadWorld(world, false);
+        try { Util.deleteDirectory(worldFile); } catch (IOException e) {HeadWars.getInstance().getLogger().warning("An error occurred while deleting game world!");}
 
     }
 
@@ -572,6 +585,17 @@ public class HeadWarsGame implements Listener {
 
         if (block.getWorld() != world) return;
 
+        if (block.getType() == Material.TNT) {
+            block.setType(Material.AIR);
+            world.spawnEntity(block.getLocation(), EntityType.TNT, CreatureSpawnEvent.SpawnReason.SPELL, entity -> entity.setVelocity(new Vector()));
+            return;
+        }
+
+        if (Objects.equals(event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "item"), PersistentDataType.STRING), "fireball")) {
+            event.setCancelled(true);
+            return;
+        }
+
         String id = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
         if (id == null) return;
 
@@ -622,7 +646,14 @@ public class HeadWarsGame implements Listener {
     }
 
     @EventHandler
-    public void onBlockRightClick(@NotNull PlayerInteractEvent event) {
+    public void onRightClick(@NotNull PlayerInteractEvent event) {
+
+        Player player = event.getPlayer();
+        if (Objects.equals(player.getInventory().getItemInMainHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "item"), PersistentDataType.STRING), "fireball")) {
+            event.setCancelled(true);
+            player.getInventory().removeItem(player.getInventory().getItemInMainHand().asOne());
+            player.launchProjectile(Fireball.class, player.getLocation().getDirection());
+        }
 
         if (event.getClickedBlock() == null) return;
         if (event.getAction().isLeftClick()) return;

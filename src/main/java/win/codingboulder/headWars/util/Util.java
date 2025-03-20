@@ -8,7 +8,6 @@ import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
-import java.nio.channels.FileLock;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,9 +35,7 @@ public class Util {
     public static void deleteDirectory(@NotNull File directory) throws IOException {
         Path pathToBeDeleted = Path.of(directory.toURI());
         try (Stream<Path> paths = Files.walk(pathToBeDeleted)) {
-            paths.sorted(Comparator.reverseOrder()).forEach(path -> {
-                path.toFile().delete();
-            });
+            paths.sorted(Comparator.reverseOrder()).forEach(path -> path.toFile().delete());
         }
     }
 

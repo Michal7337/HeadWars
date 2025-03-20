@@ -42,7 +42,7 @@ public final class HeadWars extends JavaPlugin {
     @Override
     public void onDisable() {
 
-        HeadWarsGameManager.activeGames().forEach(HeadWarsGame::handleGameStop);
+        HeadWarsGameManager.activeGames().forEach(HeadWarsGame::handleForceStop);
 
         HeadWarsGameManager.worldFolders.forEach(world -> {
             try { Util.deleteDirectory(world); } catch (IOException e) {throw new RuntimeException(e);}
