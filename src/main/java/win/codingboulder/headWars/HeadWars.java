@@ -19,7 +19,7 @@ public final class HeadWars extends JavaPlugin {
     private static File mapsFolder;
     private static File shopsFolder;
 
-    public static String serverName = "CodingBoulder";
+    public static String serverName = "codingboulder.win";
 
     @Override
     public void onEnable() {
