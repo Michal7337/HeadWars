@@ -187,7 +187,10 @@ public class ShopGui implements InventoryHolder, Listener {
                 if (player.getInventory().contains(Material.WOODEN_PICKAXE)) {
 
                     item = item.withType(Material.STONE_PICKAXE);
-                    item.lore(List.of(MiniMessage.miniMessage().deserialize("<i></i><gray>Cost: <white>48 Iron")));
+                    item.lore(List.of(
+                        Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                            .append(Component.text("48 Iron", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                    ));
 
                     item.editPersistentDataContainer(pdc -> pdc.set(
                         new NamespacedKey("headwars", "shopprice"),
@@ -197,7 +200,10 @@ public class ShopGui implements InventoryHolder, Listener {
                 } else if (player.getInventory().contains(Material.STONE_PICKAXE)) {
 
                     item = item.withType(Material.IRON_PICKAXE);
-                    item.lore(List.of(MiniMessage.miniMessage().deserialize("<i></i><gray>Cost: <gold>32 Gold")));
+                    item.lore(List.of(
+                        Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                            .append(Component.text("32 Gold", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false))
+                    ));
 
                     item.editPersistentDataContainer(pdc -> pdc.set(
                         new NamespacedKey("headwars", "shopprice"),
@@ -207,7 +213,10 @@ public class ShopGui implements InventoryHolder, Listener {
                 } else if (player.getInventory().contains(Material.IRON_PICKAXE)) {
 
                     item = item.withType(Material.DIAMOND_PICKAXE);
-                    item.lore(List.of(MiniMessage.miniMessage().deserialize("<i></i><gray>Cost: <aqua>24 Diamond")));
+                    item.lore(List.of(
+                        Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                            .append(Component.text("24 Diamond", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
+                    ));
 
                     item.editPersistentDataContainer(pdc -> pdc.set(
                         new NamespacedKey("headwars", "shopprice"),
@@ -216,7 +225,10 @@ public class ShopGui implements InventoryHolder, Listener {
 
                 } else {
 
-                    item.lore(List.of(MiniMessage.miniMessage().deserialize("<i></i><gray>Cost: <white>24 Iron")));
+                    item.lore(List.of(
+                        Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
+                            .append(Component.text("24 Iron", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
+                    ));
                     item.editPersistentDataContainer(pdc -> pdc.set(
                         new NamespacedKey("headwars", "shopprice"),
                         PersistentDataType.BYTE_ARRAY, ItemStack.of(Material.IRON_INGOT, 24).serializeAsBytes())

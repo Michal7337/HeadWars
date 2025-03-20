@@ -108,6 +108,10 @@ public class ResourceGenerator extends BukkitRunnable {
     public static HashMap<String, HashMap<Integer, Material>> genTierMaterials = new HashMap<>();
     public static HashMap<String, HashMap<Integer, Integer>> genSpeeds = new HashMap<>();
 
+    public static HashMap<Material, Material> blockUpgradeMaterials = new HashMap<>();
+    public static HashMap<Material, ItemStack> blockUpgradePrices = new HashMap<>();
+    public static HashMap<Material, Component> blockUpgradeMessages = new HashMap<>();
+
     static {
 
         HashMap<Integer, Component> ironUpgradeMessages = new HashMap<>();
@@ -179,6 +183,22 @@ public class ResourceGenerator extends BukkitRunnable {
         genSpeeds.put("iron_generator", ironGenSpeeds);
         genSpeeds.put("gold_generator", goldGenSpeeds);
         genSpeeds.put("diamond_generator", diamondGenSpeeds);
+
+
+        blockUpgradeMaterials.put(Material.WHITE_WOOL, Material.WHITE_TERRACOTTA);
+        blockUpgradeMaterials.put(Material.WHITE_TERRACOTTA, Material.SMOOTH_STONE);
+        blockUpgradeMaterials.put(Material.SMOOTH_STONE, Material.END_STONE);
+        blockUpgradeMaterials.put(Material.END_STONE, Material.OBSIDIAN);
+
+        blockUpgradePrices.put(Material.WHITE_WOOL, ItemStack.of(Material.IRON_INGOT, 16));
+        blockUpgradePrices.put(Material.WHITE_TERRACOTTA, ItemStack.of(Material.IRON_INGOT, 48));
+        blockUpgradePrices.put(Material.SMOOTH_STONE, ItemStack.of(Material.GOLD_INGOT, 32));
+        blockUpgradePrices.put(Material.END_STONE, ItemStack.of(Material.DIAMOND, 24));
+
+        blockUpgradeMessages.put(Material.WHITE_WOOL, MiniMessage.miniMessage().deserialize("<green>Cost: <white>16 Iron <green>| Click again to confirm!"));
+        blockUpgradeMessages.put(Material.WHITE_TERRACOTTA, MiniMessage.miniMessage().deserialize("<green>Cost: <white>48 Iron <green>| Click again to confirm!"));
+        blockUpgradeMessages.put(Material.SMOOTH_STONE, MiniMessage.miniMessage().deserialize("<green>Cost: <gold>32 Gold <green>| Click again to confirm!"));
+        blockUpgradeMessages.put(Material.END_STONE, MiniMessage.miniMessage().deserialize("<green>Cost: <aqua>24 Diamond <green>| Click again to confirm!"));
 
     }
 

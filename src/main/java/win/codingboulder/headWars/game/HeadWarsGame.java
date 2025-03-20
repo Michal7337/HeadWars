@@ -461,7 +461,7 @@ public class HeadWarsGame implements Listener {
     private void handleBlockUpgrade(Block block, Player player) {
 
         boolean isGenCarpet = false;
-        for (Block block1 : generators.keySet()) if (block == block1.getRelative(BlockFace.UP)) {isGenCarpet = true; break;}
+        for (Block gen : generators.keySet()) if (block == gen.getRelative(BlockFace.UP)) {isGenCarpet = true; break;}
         if (isGenCarpet) block = block.getRelative(BlockFace.DOWN);
 
         if (generators.containsKey(block)) {
@@ -500,6 +500,33 @@ public class HeadWarsGame implements Listener {
 
                 // Display the confirmation message
                 player.sendActionBar(ResourceGenerator.genUpgradeMessages.get(generator.id()).get(generator.getTier()));
+                pendingConfirmUpgrades.put(player, block);
+
+            }
+
+        }
+
+        Material blockMat;
+        if (Util.isWool(block)) blockMat = Material.WHITE_WOOL; else blockMat = block.getType();
+        if (ResourceGenerator.blockUpgradeMaterials.containsKey(blockMat)) {
+
+            if (block.equals(pendingConfirmUpgrades.get(player))) {
+
+                pendingConfirmUpgrades.remove(player);
+                ItemStack cost = ResourceGenerator.blockUpgradePrices.get(blockMat);
+                if (!player.getInventory().containsAtLeast(cost, cost.getAmount())) {
+                    player.sendActionBar(Component.text("You don't have enough resources!", NamedTextColor.RED));
+                    return;
+                }
+
+                player.getInventory().removeItem(cost);
+                block.setType(ResourceGenerator.blockUpgradeMaterials.get(blockMat));
+                player.playSound(Sound.sound().type(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP).build(), Sound.Emitter.self());
+
+
+            } else {
+
+                player.sendActionBar(ResourceGenerator.blockUpgradeMessages.get(blockMat));
                 pendingConfirmUpgrades.put(player, block);
 
             }

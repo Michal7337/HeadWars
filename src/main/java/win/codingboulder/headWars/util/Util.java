@@ -4,6 +4,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -74,6 +75,10 @@ public class Util {
 
         return textColor;
 
+    }
+
+    public static boolean isWool(@NotNull Block block) {
+        return block.getType().toString().contains("_WOOL");
     }
 
 }
