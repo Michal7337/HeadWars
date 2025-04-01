@@ -18,6 +18,7 @@ public final class HeadWars extends JavaPlugin {
 
     private static File mapsFolder;
     private static File shopsFolder;
+    private static File generatorsFolder;
 
     public static String serverName = "codingboulder.win";
 
@@ -60,11 +61,15 @@ public final class HeadWars extends JavaPlugin {
         shopsFolder = new File(getDataFolder(), "shops");
         if (shopsFolder.mkdir()) getLogger().info("Created shops folder");
 
+        shopsFolder = new File(getDataFolder(), "generators");
+        if (shopsFolder.mkdir()) getLogger().info("Created generators folder");
+
     }
 
     public static HeadWars getInstance() {return instance;}
 
     public static File getMapsFolder() {return mapsFolder;}
     public static File getShopsFolder() {return shopsFolder;}
+    public static File getGeneratorsFolder() {return generatorsFolder;}
 
 }
