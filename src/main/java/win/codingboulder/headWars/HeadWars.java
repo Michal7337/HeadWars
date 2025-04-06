@@ -3,6 +3,7 @@ package win.codingboulder.headWars;
 import org.bukkit.plugin.java.JavaPlugin;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
+import win.codingboulder.headWars.game.ResourceGenerator;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.game.shop.ShopManager;
@@ -33,6 +34,7 @@ public final class HeadWars extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ShopConfigGUI(), this);
         getServer().getPluginManager().registerEvents(new ShopGui(), this);
+        getServer().getPluginManager().registerEvents(new ResourceGenerator(null, null), this);
 
         HeadWarsMapManager.loadAllMaps();
         ShopManager.loadAllShops();

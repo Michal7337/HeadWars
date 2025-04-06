@@ -1,93 +1,261 @@
 package win.codingboulder.headWars.game;
 
+import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
+import win.codingboulder.headWars.util.Pair;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ResourceGenerator extends BukkitRunnable {
+public class ResourceGenerator extends BukkitRunnable implements Listener {
 
-    private String id;
-    private int tier;
+    public static HashMap<Block, ResourceGenerator> generators = new HashMap<>();
+    public static HashMap<Block, ResourceGenerator> generatorCarpets = new HashMap<>();
+
+    private GeneratorType type;
     private Block block;
-    private ItemStack resource;
-    private int genTime;
-    private final ArrayList<Item> generatedItems = new ArrayList<>();
-    public ItemStack spawningItem;
-    public Player placingPlayer;
 
-    public ResourceGenerator(Block block, ItemStack resource, int genTime, String id) {
+    private int tier;
+    public Player placingPlayer;
+    public ItemStack spawningItem;
+
+    public ResourceGenerator(Block block, GeneratorType type) {
 
         this.block = block;
-        this.resource = resource;
-        this.genTime = genTime;
-        this.id = id;
+        this.type = type;
 
-        this.runTaskTimer(HeadWars.getInstance(), 0, genTime);
+        //if (type != null && !type.tiers().isEmpty() && block != null) this.runTaskTimer(HeadWars.getInstance(), 20, type.tiers().get(0).speed());
 
     }
 
     @Override
     public void run() {
 
-        //generatedItems.stream().filter(item -> !item.isValid()).forEach(generatedItems::remove);
-        //if (generatedItems.size() >= 64) return;
-        Item item = block.getWorld().dropItem(block.getLocation().add(0, 1, 0).toCenterLocation(), resource, item1 -> item1.setVelocity(new Vector()));
-        //generatedItems.add(item);
+        Item item = block.getWorld().dropItem(block.getLocation().add(0, 1, 0).toCenterLocation(), type.resource(), item1 -> item1.setVelocity(new Vector()));
 
     }
 
-    public ResourceGenerator setGenTime(int genTime) {
+    public void upgrade(Player player) {
 
-        this.genTime = genTime;
+        if (type.tiers().size() < tier + 2) { // if there are no more tiers | 1 -> 2 -- 3 tiers
+            player.sendActionBar(Component.text("This generator is at max tier!", NamedTextColor.RED));
+            return;
+        }
+
+        tier++;
+        GeneratorType.GeneratorTier newTier = type.tiers().get(tier);
+        if (newTier == null) return;
+
+        ResourceGenerator newGen = new ResourceGenerator(block, type);
+        newGen.placingPlayer = placingPlayer;
+        newGen.spawningItem = spawningItem;
+
         this.cancel();
-
-        ResourceGenerator gen = new ResourceGenerator(block, resource, genTime, id);
-        gen.spawningItem = spawningItem;
-        gen.placingPlayer = placingPlayer;
-
-        return gen;
+        newGen.runTaskTimer(HeadWars.getInstance(), newTier.speed(), newTier.speed());
+        block.setType(newTier.material());
 
     }
 
-    public int getGenTime() {
-        return genTime;
+    public void upgrade() {
+
+        if (type.tiers().size() < tier + 2) return; // if there are no more tiers | 1 -> 2 -- 3 tiers
+
+        tier++;
+        GeneratorType.GeneratorTier newTier = type.tiers().get(tier);
+        if (newTier == null) return;
+
+        ResourceGenerator newGen = new ResourceGenerator(block, type);
+        newGen.placingPlayer = placingPlayer;
+        newGen.spawningItem = spawningItem;
+
+        this.cancel();
+        newGen.runTaskTimer(HeadWars.getInstance(), newTier.speed(), newTier.speed());
+        block.setType(newTier.material());
+
     }
 
-    public Block getBlock() {
-        return block;
+    @EventHandler
+    public void onBlockPlace(@NotNull BlockPlaceEvent event) {
+
+        String id = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
+        if (id == null) return;
+        if (!id.equals("resource_generator")) return;
+        String genId = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "generator_id"), PersistentDataType.STRING);
+        if (genId == null) return;
+
+        GeneratorType generatorType = GeneratorType.registeredTypes.get(genId);
+        if (generatorType == null) {event.setCancelled(true); return;}
+        if (generatorType.tiers().isEmpty()) {event.setCancelled(true); return;}
+
+        Block placedBlock = event.getBlock();
+        Player player = event.getPlayer();
+
+        // logic for handling HeadWars team generator limits. Remove if using generators outside HeadWars
+        HeadWarsGame game = HeadWarsGameManager.playersInGames.get(player);
+        if (game != null && game.isStarted()) {
+            GameTeam team = game.playerTeams().get(player);
+            if (team.generators >= team.generatorLimit) {
+                player.sendActionBar(Component.text("You can't place any more generators!", NamedTextColor.RED));
+                event.setCancelled(true);
+                return;
+            } else if (!game.isLocationInArea2D(placedBlock.getLocation(), Pair.of(team.mapTeam().getBasePerimeterPos1(), team.mapTeam().getBasePerimeterPos2()))) {
+                player.sendActionBar(Component.text("You can't place generators outside of your base!", NamedTextColor.RED));
+                event.setCancelled(true);
+                return;
+            } else team.generators++;
+        }
+
+        boolean hasCarpet = generatorType.carpetMaterial() != Material.AIR;
+        if (hasCarpet && !placedBlock.getRelative(BlockFace.UP).isEmpty()) {event.setCancelled(true); return;}
+
+        ResourceGenerator generator = new ResourceGenerator(placedBlock, generatorType);
+
+        placedBlock.setType(generator.generatorTier().material());
+        if (hasCarpet) placedBlock.getRelative(BlockFace.UP).setType(generatorType.carpetMaterial());
+        generator.runTaskTimer(HeadWars.getInstance(), 20, generator.generatorTier().speed());
+        generator.spawningItem = event.getItemInHand().asOne();
+        generator.placingPlayer = player;
+
+        generators.put(placedBlock, generator);
+        if (hasCarpet) generatorCarpets.put(placedBlock.getRelative(BlockFace.UP), generator);
+
     }
 
-    public void setBlock(Block block) {
-        this.block = block;
+    private static final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
+
+    @EventHandler
+    public void onRightClick(@NotNull PlayerInteractEvent event) {
+
+        Player player = event.getPlayer();
+        Block clickedBlock = event.getClickedBlock();
+
+        if (clickedBlock == null) return;
+        if (!event.getAction().isRightClick()) return;
+        if (!player.isSneaking()) return;
+        if (!generators.containsKey(clickedBlock) && !generatorCarpets.containsKey(clickedBlock)) return; // if it's not a generator or a carpet
+
+        if (generatorCarpets.containsKey(clickedBlock)) clickedBlock = generatorCarpets.get(clickedBlock).block;
+
+        ResourceGenerator generator = generators.get(clickedBlock);
+        if (!generator.type.upgradableByPlayers()) return;
+
+        if (generator.type.tiers().size() < generator.tier + 2) { // if there are no more tiers, ignore upgrade | 1 -> 2 -- 3 tiers
+            player.sendActionBar(Component.text("This generator is at max tier!", NamedTextColor.RED));
+            return;
+        }
+
+        if (clickedBlock.equals(pendingConfirmUpgrades.get(player))) { // if the player's pending upgrade is the clicked generator
+
+            GeneratorType.GeneratorTier generatorTier = generator.generatorTier();
+
+            if (player.getInventory().containsAtLeast(generatorTier.upgradeCost(), generatorTier.upgradeCost().getAmount())) {
+
+                generator.upgrade(player);
+                player.getInventory().removeItem(generatorTier.upgradeCost());
+                player.sendActionBar(Component.text("Generator upgraded!", NamedTextColor.GREEN));
+                player.playSound(Sound.sound().type(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP).build(), Sound.Emitter.self());
+                pendingConfirmUpgrades.remove(player);
+
+            } else {
+
+                player.sendActionBar(Component.text("You can't afford this!", NamedTextColor.RED));
+                pendingConfirmUpgrades.remove(player);
+
+            }
+
+        } else { // if the player's pending upgrade is empty or a different generator
+
+            pendingConfirmUpgrades.put(player, clickedBlock);
+            player.sendActionBar(type.tiers().get(tier).upgradeMessage());
+
+        }
+
     }
 
-    public ItemStack getResource() {
-        return resource;
+    @EventHandler
+    public void onBlockBreak(@NotNull BlockBreakEvent event) {
+
+        Block brokenBlock = event.getBlock();
+
+        if (generators.containsKey(brokenBlock)) {
+
+            ResourceGenerator generator = generators.get(brokenBlock);
+
+            generator.cancel();
+            if (generatorCarpets.containsKey(brokenBlock.getRelative(BlockFace.UP))) brokenBlock.getRelative(BlockFace.UP).setType(Material.AIR);
+            event.setDropItems(false);
+            block.getWorld().dropItem(block.getLocation(), generator.spawningItem);
+            generators.remove(brokenBlock);
+
+            // logic for handling HeadWars team generator limits. Remove if using generators outside HeadWars
+            if (generator.placingPlayer != null && HeadWarsGameManager.playersInGames.containsKey(generator.placingPlayer)
+                && HeadWarsGameManager.playersInGames.get(generator.placingPlayer).isStarted()
+            ) HeadWarsGameManager.playersInGames.get(generator.placingPlayer).playerTeams().get(generator.placingPlayer).generators--;
+
+        } else if (generatorCarpets.containsKey(brokenBlock)) event.setCancelled(true);
+
     }
 
-    public void setResource(ItemStack resource) {
-        this.resource = resource;
+    @EventHandler
+    public void onBlockDestroy(@NotNull BlockDestroyEvent event) {
+
+        Block brokenBlock = event.getBlock();
+
+        if (generators.containsKey(brokenBlock)) {
+
+            ResourceGenerator generator = generators.get(brokenBlock);
+
+            generator.cancel();
+            if (generatorCarpets.containsKey(brokenBlock.getRelative(BlockFace.UP))) brokenBlock.getRelative(BlockFace.UP).setType(Material.AIR);
+            event.setWillDrop(false);
+            block.getWorld().dropItem(block.getLocation(), generator.spawningItem);
+            generators.remove(brokenBlock);
+
+            // logic for handling HeadWars team generator limits. Remove if using generators outside HeadWars
+            if (generator.placingPlayer != null && HeadWarsGameManager.playersInGames.containsKey(generator.placingPlayer)
+                && HeadWarsGameManager.playersInGames.get(generator.placingPlayer).isStarted()
+            ) HeadWarsGameManager.playersInGames.get(generator.placingPlayer).playerTeams().get(generator.placingPlayer).generators--;
+
+        } else if (generatorCarpets.containsKey(brokenBlock)) event.setCancelled(true);
+
     }
 
-    public String id() {
-        return id;
+    @EventHandler
+    public void onBlockExplode(@NotNull EntityExplodeEvent event) {
+
+        event.blockList().removeIf(expBlock -> generators.containsKey(expBlock) || generatorCarpets.containsKey(expBlock));
+
     }
 
-    public void id(String id) {
-        this.id = id;
+    public GeneratorType type() {
+        return type;
     }
 
-    public int getTier() {
+    public void setType(GeneratorType type) {
+        this.type = type;
+    }
+
+    public int tier() {
         return tier;
     }
 
@@ -95,12 +263,16 @@ public class ResourceGenerator extends BukkitRunnable {
         this.tier = tier;
     }
 
-    public Player getPlacingPlayer() {
-        return placingPlayer;
+    public Block block() {
+        return block;
     }
 
-    public void setPlacingPlayer(Player placingPlayer) {
-        this.placingPlayer = placingPlayer;
+    public void setBlock(Block block) {
+        this.block = block;
+    }
+
+    public GeneratorType.GeneratorTier generatorTier() {
+        return this.type.tiers().get(this.tier);
     }
 
     public static HashMap<String, HashMap<Integer, Component>> genUpgradeMessages = new HashMap<>();
