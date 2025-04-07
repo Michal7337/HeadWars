@@ -1,6 +1,7 @@
 package win.codingboulder.headWars;
 
 import com.mojang.brigadier.LiteralMessage;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
@@ -15,12 +16,14 @@ import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySele
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.*;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
+import win.codingboulder.headWars.game.GeneratorType;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.ItemShop;
@@ -35,6 +38,7 @@ import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.SimpleFinePos;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -646,6 +650,148 @@ public class HeadWarsCommand {
                                             )
                                         )
 
+                                    )
+
+                                )
+
+                                .then(Commands.literal("generators")
+
+                                    .then(Commands.literal("create")
+
+                                        .then(Commands.argument("id", StringArgumentType.word())
+                                            .then(Commands.argument("name", StringArgumentType.string())
+                                                .then(Commands.argument("carpet-material", ArgumentTypes.blockState())
+                                                    .then(Commands.argument("upgradeable-by-players", BoolArgumentType.bool())
+                                                        .then(Commands.argument("item-limit", IntegerArgumentType.integer(1))
+                                                            .executes(context -> {
+
+                                                                GeneratorType generatorType = new GeneratorType(
+                                                                    StringArgumentType.getString(context, "id"),
+                                                                    StringArgumentType.getString(context, "name"),
+                                                                    context.getArgument("carpet-material", BlockState.class).getType(),
+                                                                    BoolArgumentType.getBool(context, "upgradeable-by-players"),
+                                                                    IntegerArgumentType.getInteger(context, "item-limit"),
+                                                                    new HashMap<>(), // tiers
+                                                                    new byte[0] // resource
+                                                                );
+
+                                                                generatorType.saveGeneratorType();
+                                                                GeneratorType.reloadGeneratorTypes();
+
+                                                                context.getSource().getSender().sendRichMessage("<green>Created new generator type");
+
+                                                                return 1;
+
+                                                            }))))))
+                                    )
+
+                                    .then(Commands.literal("edit")
+
+                                        .then(Commands.argument("generator", StringArgumentType.word())
+                                            .suggests((context, builder) -> {
+                                                GeneratorType.registeredTypes.keySet().forEach(builder::suggest);
+                                                return builder.buildFuture();
+                                            })
+
+                                            .then(Commands.literal("set-tier")
+                                                .then(Commands.argument("tier", IntegerArgumentType.integer(0))
+                                                    .then(Commands.argument("speed", IntegerArgumentType.integer(1))
+                                                        .then(Commands.argument("material", ArgumentTypes.blockState())
+                                                            .then(Commands.argument("upgrade-message", StringArgumentType.string())
+                                                                .executes(context -> {
+
+                                                                    GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
+                                                                    if (type == null) {
+                                                                        context.getSource().getSender().sendRichMessage("<red>That generator type doesn't exist!");
+                                                                        return 1;
+                                                                    }
+
+                                                                    byte[] upgradeCost;
+
+                                                                    if (context.getSource().getSender() instanceof Player player) {
+                                                                        if (player.getInventory().getItemInMainHand().isEmpty()) {
+                                                                            player.sendRichMessage("<yellow>You aren't holding anything so the generator upgrade is free!");
+                                                                            upgradeCost = new byte[0];
+                                                                        } else {
+                                                                            upgradeCost = player.getInventory().getItemInMainHand().serializeAsBytes();
+                                                                            player.sendRichMessage("<yellow>Upgrade cost set to held item");
+                                                                        }
+                                                                    } else upgradeCost = new byte[0];
+
+                                                                    int tierNum = IntegerArgumentType.getInteger(context, "tier");
+
+                                                                    GeneratorType.GeneratorTier tier = new GeneratorType.GeneratorTier(
+                                                                        tierNum,
+                                                                        IntegerArgumentType.getInteger(context, "speed"),
+                                                                        context.getArgument("material", BlockState.class).getType(),
+                                                                        StringArgumentType.getString(context, "upgrade-message"),
+                                                                        upgradeCost
+                                                                    );
+
+                                                                    type.tiers().put(tierNum, tier);
+                                                                    type.saveGeneratorType();
+                                                                    GeneratorType.reloadGeneratorTypes();
+
+                                                                    context.getSource().getSender().sendRichMessage("<green>Added a new tier to the generator type");
+
+                                                                    return 1;
+
+                                                                })))))
+                                            )
+
+                                            .then(Commands.literal("set-generated-resource")
+
+                                                .then(Commands.literal("hand")
+                                                    .requires(commandSourceStack -> commandSourceStack.getSender() instanceof Player)
+                                                    .executes(context -> {
+
+                                                        GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
+                                                        if (type == null) {
+                                                            context.getSource().getSender().sendRichMessage("<red>That generator type doesn't exist!");
+                                                            return 1;
+                                                        }
+
+                                                        Player player = (Player) context.getSource().getSender();
+                                                        ItemStack item;
+                                                        if (player.getInventory().getItemInMainHand().isEmpty()) {
+                                                            player.sendRichMessage("<yellow>You aren't holding anything. The generator will not generate anything!");
+                                                            item = ItemStack.empty();
+                                                        } else item = player.getInventory().getItemInMainHand();
+
+                                                        type.setResource(item);
+                                                        type.saveGeneratorType();
+
+                                                        player.sendRichMessage("<green>Set generated resource");
+
+                                                        return 1;
+                                                    }))
+
+                                                .then(Commands.argument("item", ArgumentTypes.itemStack())
+                                                    .then(Commands.argument("count", IntegerArgumentType.integer(1))
+                                                        .executes(context -> {
+
+                                                            GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
+                                                            if (type == null) {
+                                                                context.getSource().getSender().sendRichMessage("<red>That generator type doesn't exist!");
+                                                                return 1;
+                                                            }
+
+                                                            ItemStack itemStack = context.getArgument("item", ItemStack.class);
+                                                            itemStack.setAmount(IntegerArgumentType.getInteger(context, "count"));
+
+                                                            type.setResource(itemStack);
+                                                            type.saveGeneratorType();
+
+                                                            context.getSource().getSender().sendRichMessage("<green>Set generated resource");
+
+                                                            return 1;
+
+                                                        }))
+                                                )
+
+                                            )
+
+                                        )
                                     )
 
                                 )

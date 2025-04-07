@@ -17,7 +17,6 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -76,7 +75,6 @@ public class HeadWarsGame implements Listener {
     private final HashMap<BlockPosition, FinePosition> clickGenerators = new HashMap<>();
     private final ArrayList<GameTeam> liveTeams = new ArrayList<>();
     private final ArrayList<Player> deadPlayers = new ArrayList<>();
-    private final HashMap<Block, ResourceGenerator> generators = new HashMap<>();
 
     int maxPlayers;
 
@@ -135,7 +133,7 @@ public class HeadWarsGame implements Listener {
             } else if (gameTimer == 1500) { // heads destroyed event at 25m
                 handleHeadsDestroyedGameEvent();
                 nextEvent = "Game End";
-                nextEventTime = 1800;
+                nextEventTime = 2400;
             }
 
             nextEventTime --;
@@ -607,15 +605,6 @@ public class HeadWarsGame implements Listener {
         Block block = event.getBlock();
         if (block.getWorld() != world) return;
         if (isBlockProtected(block)) event.setCancelled(true);
-
-        generators.forEach((bl, gen) -> {
-            if (block == bl.getRelative(BlockFace.UP)) event.setCancelled(true);
-            if (block == bl) {
-                event.setWillDrop(false);
-                world.dropItem(block.getLocation(), gen.spawningItem);
-                gen.cancel();
-            }
-        });
 
         teams.forEach(team -> {
             if (team.unbrokenHeads().contains(block.getLocation().toBlock())) event.setCancelled(true);

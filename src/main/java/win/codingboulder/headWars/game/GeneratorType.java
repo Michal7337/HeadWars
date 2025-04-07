@@ -27,17 +27,19 @@ public class GeneratorType {
     private String name;
     private Material carpetMaterial;
     private boolean upgradableByPlayers;
+    private int itemLimit;
     private HashMap<Integer, GeneratorTier> tiers;
     private byte[] resource;
 
     private ItemStack resourceStack;
 
-    public GeneratorType(String id, String name, Material carpetMaterial, boolean upgradableByPlayers, HashMap<Integer, GeneratorTier> tiers, byte[] resource) {
+    public GeneratorType(String id, String name, Material carpetMaterial, boolean upgradableByPlayers, int itemLimit, HashMap<Integer, GeneratorTier> tiers, byte[] resource) {
 
         this.id = id;
         this.name = name;
         this.carpetMaterial = carpetMaterial;
         this.upgradableByPlayers = upgradableByPlayers;
+        this.itemLimit = itemLimit;
         this.tiers = tiers;
         this.resource = resource;
         if (ArrayUtils.isEmpty(resource)) resourceStack = ItemStack.empty(); else resourceStack = ItemStack.deserializeBytes(resource);
@@ -109,6 +111,14 @@ public class GeneratorType {
 
     public void setUpgradableByPlayers(boolean upgradableByPlayers) {
         this.upgradableByPlayers = upgradableByPlayers;
+    }
+
+    public int itemLimit() {
+        return itemLimit;
+    }
+
+    public void setItemLimit(int itemLimit) {
+        this.itemLimit = itemLimit;
     }
 
     public HashMap<Integer, GeneratorTier> tiers() {
