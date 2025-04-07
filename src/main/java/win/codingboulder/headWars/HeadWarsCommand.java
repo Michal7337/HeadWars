@@ -736,7 +736,43 @@ public class HeadWarsCommand {
 
                                                                     return 1;
 
-                                                                })))))
+                                                                })
+
+                                                                .then(Commands.argument("upgrade-cost", ArgumentTypes.itemStack())
+                                                                    .then(Commands.argument("upgrade-cost-amount", IntegerArgumentType.integer(1))
+                                                                        .executes(context -> {
+
+                                                                            GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
+                                                                            if (type == null) {
+                                                                                context.getSource().getSender().sendRichMessage("<red>That generator type doesn't exist!");
+                                                                                return 1;
+                                                                            }
+
+                                                                            byte[] upgradeCost = context.getArgument("upgrade-cost", ItemStack.class)
+                                                                                .asQuantity(IntegerArgumentType.getInteger(context, "upgrade-cost-amount"))
+                                                                                .serializeAsBytes();
+
+                                                                            int tierNum = IntegerArgumentType.getInteger(context, "tier");
+
+                                                                            GeneratorType.GeneratorTier tier = new GeneratorType.GeneratorTier(
+                                                                                tierNum,
+                                                                                IntegerArgumentType.getInteger(context, "speed"),
+                                                                                context.getArgument("material", BlockState.class).getType(),
+                                                                                StringArgumentType.getString(context, "upgrade-message"),
+                                                                                upgradeCost
+                                                                            );
+
+                                                                            type.tiers().put(tierNum, tier);
+                                                                            type.saveGeneratorType();
+                                                                            GeneratorType.reloadGeneratorTypes();
+
+                                                                            context.getSource().getSender().sendRichMessage("<green>Added a new tier to the generator type");
+
+                                                                            return 1;
+
+                                                                        })))
+
+                                                            ))))
                                             )
 
                                             .then(Commands.literal("set-generated-resource")
@@ -793,6 +829,15 @@ public class HeadWarsCommand {
 
                                         )
                                     )
+
+                                    .then(Commands.literal("reload")
+                                        .executes(context -> {
+
+                                            GeneratorType.reloadGeneratorTypes();
+                                            context.getSource().getSender().sendRichMessage("<green>Reloaded generator types!");
+                                            return 1;
+
+                                        }))
 
                                 )
 

@@ -1,6 +1,7 @@
 package win.codingboulder.headWars;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import win.codingboulder.headWars.game.GeneratorType;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.ResourceGenerator;
@@ -38,7 +39,7 @@ public final class HeadWars extends JavaPlugin {
 
         HeadWarsMapManager.loadAllMaps();
         ShopManager.loadAllShops();
-
+        GeneratorType.reloadGeneratorTypes();
 
     }
 
@@ -63,8 +64,8 @@ public final class HeadWars extends JavaPlugin {
         shopsFolder = new File(getDataFolder(), "shops");
         if (shopsFolder.mkdir()) getLogger().info("Created shops folder");
 
-        shopsFolder = new File(getDataFolder(), "generators");
-        if (shopsFolder.mkdir()) getLogger().info("Created generators folder");
+        generatorsFolder = new File(getDataFolder(), "generators");
+        if (generatorsFolder.mkdir()) getLogger().info("Created generators folder");
 
     }
 

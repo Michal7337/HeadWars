@@ -7,6 +7,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Item;
@@ -17,6 +18,8 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -26,6 +29,8 @@ import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.util.Pair;
 
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 public class ResourceGenerator extends BukkitRunnable implements Listener {
 
@@ -38,6 +43,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
     private int tier;
     public Player placingPlayer;
     public ItemStack spawningItem;
+    public boolean saveOnUnload;
 
     public ResourceGenerator(Block block, GeneratorType type) {
 
@@ -69,10 +75,12 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         ResourceGenerator newGen = new ResourceGenerator(block, type);
         newGen.placingPlayer = placingPlayer;
         newGen.spawningItem = spawningItem;
+        newGen.saveOnUnload = saveOnUnload;
 
         this.cancel();
         newGen.runTaskTimer(HeadWars.getInstance(), newTier.speed(), newTier.speed());
         block.setType(newTier.material());
+        generators.put(block, newGen);
 
     }
 
@@ -91,6 +99,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         this.cancel();
         newGen.runTaskTimer(HeadWars.getInstance(), newTier.speed(), newTier.speed());
         block.setType(newTier.material());
+        generators.put(block, newGen);
 
     }
 
@@ -151,6 +160,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
 
         if (clickedBlock == null) return;
         if (!event.getAction().isRightClick()) return;
+        if (Objects.equals(event.getHand(), EquipmentSlot.OFF_HAND)) return;
         if (!player.isSneaking()) return;
         if (!generators.containsKey(clickedBlock) && !generatorCarpets.containsKey(clickedBlock)) return; // if it's not a generator or a carpet
 
@@ -186,7 +196,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         } else { // if the player's pending upgrade is empty or a different generator
 
             pendingConfirmUpgrades.put(player, clickedBlock);
-            player.sendActionBar(type.tiers().get(tier).upgradeMessage());
+            player.sendActionBar(generator.generatorTier().upgradeMessage());
 
         }
 
@@ -204,7 +214,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
             generator.cancel();
             if (generatorCarpets.containsKey(brokenBlock.getRelative(BlockFace.UP))) brokenBlock.getRelative(BlockFace.UP).setType(Material.AIR);
             event.setDropItems(false);
-            block.getWorld().dropItem(block.getLocation(), generator.spawningItem);
+            brokenBlock.getWorld().dropItem(brokenBlock.getLocation(), generator.spawningItem);
             generators.remove(brokenBlock);
 
             // logic for handling HeadWars team generator limits. Remove if using generators outside HeadWars
@@ -228,7 +238,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
             generator.cancel();
             if (generatorCarpets.containsKey(brokenBlock.getRelative(BlockFace.UP))) brokenBlock.getRelative(BlockFace.UP).setType(Material.AIR);
             event.setWillDrop(false);
-            block.getWorld().dropItem(block.getLocation(), generator.spawningItem);
+            brokenBlock.getWorld().dropItem(brokenBlock.getLocation(), generator.spawningItem);
             generators.remove(brokenBlock);
 
             // logic for handling HeadWars team generator limits. Remove if using generators outside HeadWars
@@ -244,6 +254,19 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
     public void onBlockExplode(@NotNull EntityExplodeEvent event) {
 
         event.blockList().removeIf(expBlock -> generators.containsKey(expBlock) || generatorCarpets.containsKey(expBlock));
+
+    }
+
+    @EventHandler
+    public void onWorldUnload(@NotNull WorldUnloadEvent event) {
+
+        World world = event.getWorld();
+        for (Map.Entry<Block, ResourceGenerator> gen : generators.entrySet()) {
+            if (gen.getKey().getWorld().equals(world)) {
+                gen.getValue().cancel();
+                generators.remove(gen.getKey());
+            }
+        }
 
     }
 

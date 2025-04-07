@@ -31,7 +31,7 @@ public class GeneratorType {
     private HashMap<Integer, GeneratorTier> tiers;
     private byte[] resource;
 
-    private ItemStack resourceStack;
+    private transient ItemStack resourceStack;
 
     public GeneratorType(String id, String name, Material carpetMaterial, boolean upgradableByPlayers, int itemLimit, HashMap<Integer, GeneratorTier> tiers, byte[] resource) {
 
@@ -46,6 +46,16 @@ public class GeneratorType {
 
     }
 
+    public void reloadRuntimeObjects() {
+
+        if (ArrayUtils.isEmpty(resource)) resourceStack = ItemStack.empty(); else resourceStack = ItemStack.deserializeBytes(resource);
+        tiers.values().forEach(tier -> {
+            tier.upgradeMessageComponent = MiniMessage.miniMessage().deserializeOr(tier.upgradeMessage, Component.text("Upgrade message not defined", NamedTextColor.RED));
+            if (ArrayUtils.isEmpty(tier.upgradeCost)) tier.upgradeCostItem = ItemStack.empty(); else tier.upgradeCostItem = ItemStack.deserializeBytes(tier.upgradeCost);
+        });
+
+    }
+
     public static void reloadGeneratorTypes() {
 
         File[] genFiles = HeadWars.getGeneratorsFolder().listFiles();
@@ -57,7 +67,13 @@ public class GeneratorType {
             try {
 
                 GeneratorType generatorType = gson.fromJson(new FileReader(genFile), GeneratorType.class);
+                if (generatorType == null) {
+                    HeadWars.getInstance().getLogger().warning("Could not load generator type '" + genFile.getName() + "'");
+                    return;
+                }
+
                 registeredTypes.put(generatorType.id(), generatorType);
+                generatorType.reloadRuntimeObjects();
 
             } catch (IOException e) {
                 HeadWars.getInstance().getLogger().warning("Could not load generator type '" + genFile.getName() +"' - An IO exception occurred");
@@ -71,10 +87,10 @@ public class GeneratorType {
 
     public void saveGeneratorType() {
 
-        File genFile = new File(HeadWars.getGeneratorsFolder(), this.id);
+        File genFile = new File(HeadWars.getGeneratorsFolder(), this.id + ".json");
 
-        try {
-            gson.toJson(this, new FileWriter(genFile));
+        try (FileWriter writer = new FileWriter(genFile)){
+            gson.toJson(this, writer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -155,8 +171,8 @@ public class GeneratorType {
         private String upgradeMessage;
         private byte[] upgradeCost;
 
-        private Component upgradeMessageComponent;
-        private ItemStack upgradeCostItem;
+        private transient Component upgradeMessageComponent;
+        private transient ItemStack upgradeCostItem;
 
         public GeneratorTier(int tier, int speed, Material material, String upgradeMessage, byte[] upgradeCost) {
 
