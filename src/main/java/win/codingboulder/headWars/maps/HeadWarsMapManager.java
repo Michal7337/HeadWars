@@ -33,6 +33,7 @@ public class HeadWarsMapManager {
                 SimpleFinePos.pos(0, 100, 0),
                 Pair.of(SimpleFinePos.pos(500, 300, 500), SimpleFinePos.pos(-500, -60, -500)),
                 new ArrayList<>(),
+                new ArrayList<>(),
                 new ArrayList<>()
         );
 

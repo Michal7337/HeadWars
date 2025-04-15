@@ -1,6 +1,8 @@
 package win.codingboulder.headWars.game;
 
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.Unbreakable;
 import net.kyori.adventure.sound.Sound;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.util.Pair;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -73,6 +76,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         if (newTier == null) return;
 
         ResourceGenerator newGen = new ResourceGenerator(block, type);
+        newGen.tier = tier;
         newGen.placingPlayer = placingPlayer;
         newGen.spawningItem = spawningItem;
         newGen.saveOnUnload = saveOnUnload;
@@ -174,17 +178,17 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
             return;
         }
 
-        if (clickedBlock.equals(pendingConfirmUpgrades.get(player))) { // if the player's pending upgrade is the clicked generator
+        GeneratorType.GeneratorTier generatorTier = generator.generatorTier();
 
-            GeneratorType.GeneratorTier generatorTier = generator.generatorTier();
+        if (clickedBlock.equals(pendingConfirmUpgrades.get(player))) { // if the player's pending upgrade is the clicked generator
 
             if (player.getInventory().containsAtLeast(generatorTier.upgradeCost(), generatorTier.upgradeCost().getAmount())) {
 
-                generator.upgrade(player);
                 player.getInventory().removeItem(generatorTier.upgradeCost());
                 player.sendActionBar(Component.text("Generator upgraded!", NamedTextColor.GREEN));
                 player.playSound(Sound.sound().type(org.bukkit.Sound.ENTITY_PLAYER_LEVELUP).build(), Sound.Emitter.self());
                 pendingConfirmUpgrades.remove(player);
+                generator.upgrade(player);
 
             } else {
 
@@ -196,7 +200,7 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         } else { // if the player's pending upgrade is empty or a different generator
 
             pendingConfirmUpgrades.put(player, clickedBlock);
-            player.sendActionBar(generator.generatorTier().upgradeMessage());
+            player.sendActionBar(generatorTier.upgradeMessage());
 
         }
 
@@ -307,7 +311,25 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
     public static HashMap<Material, ItemStack> blockUpgradePrices = new HashMap<>();
     public static HashMap<Material, Component> blockUpgradeMessages = new HashMap<>();
 
+    public static ArrayList<Material> pickaxeTiers = new ArrayList<>();
+    public static ArrayList<Material> swordTiers = new ArrayList<>();
+
+    public static ItemStack sword = ItemStack.of(Material.WOODEN_SWORD);
+
     static {
+
+        pickaxeTiers.add(Material.WOODEN_PICKAXE);
+        pickaxeTiers.add(Material.STONE_PICKAXE);
+        pickaxeTiers.add(Material.IRON_PICKAXE);
+        pickaxeTiers.add(Material.DIAMOND_PICKAXE);
+
+        swordTiers.add(Material.WOODEN_SWORD);
+        swordTiers.add(Material.STONE_SWORD);
+        swordTiers.add(Material.IRON_SWORD);
+        swordTiers.add(Material.DIAMOND_SWORD);
+
+        //noinspection UnstableApiUsage
+        sword.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
 
         HashMap<Integer, Component> ironUpgradeMessages = new HashMap<>();
         ironUpgradeMessages.put(1, MiniMessage.miniMessage().deserialize("<green>Cost: <white>32 Iron <green>| Click again to confirm!"));

@@ -48,10 +48,6 @@ public final class HeadWars extends JavaPlugin {
 
         HeadWarsGameManager.activeGames().forEach(HeadWarsGame::handleForceStop);
 
-        HeadWarsGameManager.worldFolders.forEach(world -> {
-            try { Util.deleteDirectory(world); } catch (IOException e) {throw new RuntimeException(e);}
-        });
-
     }
 
     private void setupFiles() {

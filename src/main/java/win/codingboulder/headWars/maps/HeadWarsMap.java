@@ -25,6 +25,7 @@ public class HeadWarsMap {
 
     private final ArrayList<SimpleBlockPos> protectedBlocks;
     private final ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas;
+    private ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> noPlaceAreas;
 
     private int playersPerTeam;
     private final HashMap<DyeColor, HeadWarsTeam> teams;
@@ -35,7 +36,7 @@ public class HeadWarsMap {
 
     private final HashMap<UUID, String> itemShops;
 
-    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, HashMap<DyeColor, HeadWarsTeam> teams, ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators, ArrayList<SimpleBlockPos> emeraldGenerators, HashMap<UUID, String> itemShops, SimpleFinePos lobbySpawn, Pair<SimpleFinePos, SimpleFinePos> mapBounds, ArrayList<SimpleBlockPos> protectedBlocks, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas) {
+    public HeadWarsMap(String ID, String name, String world, int playersPerTeam, HashMap<DyeColor, HeadWarsTeam> teams, ArrayList<Pair<SimpleBlockPos, SimpleFinePos>> clickGenerators, ArrayList<SimpleBlockPos> emeraldGenerators, HashMap<UUID, String> itemShops, SimpleFinePos lobbySpawn, Pair<SimpleFinePos, SimpleFinePos> mapBounds, ArrayList<SimpleBlockPos> protectedBlocks, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas, ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> noPlaceAreas) {
 
         this.ID = ID;
         this.name = name;
@@ -49,6 +50,7 @@ public class HeadWarsMap {
         this.mapBounds = mapBounds;
         this.protectedBlocks = protectedBlocks;
         this.protectedAreas = protectedAreas;
+        this.noPlaceAreas = noPlaceAreas;
 
     }
 
@@ -142,4 +144,13 @@ public class HeadWarsMap {
     public ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> protectedAreas() {
         return protectedAreas;
     }
+
+    public void setNoPlaceAreas(ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> noPlaceAreas) {
+        this.noPlaceAreas = noPlaceAreas;
+    }
+
+    public ArrayList<Pair<SimpleBlockPos, SimpleBlockPos>> noPlaceAreas() {
+        return noPlaceAreas;
+    }
+
 }

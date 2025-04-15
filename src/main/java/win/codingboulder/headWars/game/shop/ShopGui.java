@@ -2,6 +2,7 @@ package win.codingboulder.headWars.game.shop;
 
 import io.papermc.paper.persistence.PersistentDataContainerView;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -81,7 +82,7 @@ public class ShopGui implements InventoryHolder, Listener {
             ItemStack itemPrice;
             byte[] priceEnc = pdc.get(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY);
             if (priceEnc == null) itemPrice = ItemStack.of(Material.AIR);
-            else if (Arrays.equals(priceEnc, new byte[1])) itemPrice = ItemStack.of(Material.AIR);
+            else if (ArrayUtils.isEmpty(priceEnc)) itemPrice = ItemStack.of(Material.AIR);
             else itemPrice = ItemStack.deserializeBytes(priceEnc);
 
             if (pdc.has(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY)) {
@@ -111,7 +112,7 @@ public class ShopGui implements InventoryHolder, Listener {
                 }
 
                 ItemStack item = handleCustomItemBuy(clickedItem, player, inventory);
-                if (item.getType()!= Material.AIR) player.give(item);
+                if (item.getType() != Material.AIR) player.give(item);
 
                 player.getInventory().removeItem(itemPrice);
                 player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 2, 2);
@@ -133,6 +134,7 @@ public class ShopGui implements InventoryHolder, Listener {
 
     public static HashMap<String, CustomShopItem> customItemHandlers = new HashMap<>();
     static {
+
         customItemHandlers.put("wool", new wool());
         customItemHandlers.put("tool_pickaxe", new tool_pickaxe());
 
@@ -140,6 +142,11 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("armor_chestplate", new armor_chestplate());
         customItemHandlers.put("armor_leggings", new armor_leggings());
         customItemHandlers.put("armor_boots", new armor_boots());
+
+        customItemHandlers.put("sword_stone", new sword(Material.STONE_SWORD));
+        customItemHandlers.put("sword_iron", new sword(Material.IRON_SWORD));
+        customItemHandlers.put("sword_diamond", new sword(Material.DIAMOND_SWORD));
+
     }
 
     public @NotNull ItemStack handleCustomItemRender(@NotNull ItemStack shopItem, Player player) {

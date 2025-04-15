@@ -28,6 +28,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -262,6 +263,8 @@ public class HeadWarsGame implements Listener {
 
         });
 
+        players.forEach(player -> player.give(ResourceGenerator.sword));
+
         players.forEach(player -> player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 10, true, false)));
 
         createScoreboard();
@@ -439,43 +442,46 @@ public class HeadWarsGame implements Listener {
 
     }
 
+    public boolean isBlockInArea(Block block, @NotNull Pair<SimpleBlockPos, SimpleBlockPos> area) {
+
+        int startX, endX;
+        if (area.left().x() < area.right().x()) {
+            startX = area.left().x();
+            endX = area.right().x();
+        } else {
+            startX = area.right().x();
+            endX = area.left().x();
+        }
+
+        int startY, endY;
+        if (area.left().y() < area.right().y()) {
+            startY = area.left().y();
+            endY = area.right().y();
+        } else {
+            startY = area.right().y();
+            endY = area.left().y();
+        }
+
+        int startZ, endZ;
+        if (area.left().z() < area.right().z()) {
+            startZ = area.left().z();
+            endZ = area.right().z();
+        } else {
+            startZ = area.right().z();
+            endZ = area.left().z();
+        }
+
+        return (
+            (block.getX() >= startX && block.getX() <= endX) &&
+            (block.getY() >= startY && block.getY() <= endY) &&
+            (block.getZ() >= startZ && block.getZ() <= endZ)
+        );
+
+    }
+
     public boolean isBlockProtected(Block block) {
 
-        for (Pair<SimpleBlockPos, SimpleBlockPos> area : map.protectedAreas()) {
-
-            int startX, endX;
-            if (area.left().x() < area.right().x()) {
-                startX = area.left().x();
-                endX = area.right().x();
-            } else {
-                startX = area.right().x();
-                endX = area.left().x();
-            }
-
-            int startY, endY;
-            if (area.left().y() < area.right().y()) {
-                startY = area.left().y();
-                endY = area.right().y();
-            } else {
-                startY = area.right().y();
-                endY = area.left().y();
-            }
-
-            int startZ, endZ;
-            if (area.left().z() < area.right().z()) {
-                startZ = area.left().z();
-                endZ = area.right().z();
-            } else {
-                startZ = area.right().z();
-                endZ = area.left().z();
-            }
-
-            if ((block.getX() >= startX && block.getX() <= endX) &&
-                (block.getY() >= startY && block.getY() <= endY) &&
-                (block.getZ() >= startZ && block.getZ() <= endZ)
-            ) return true;
-
-        }
+        for (Pair<SimpleBlockPos, SimpleBlockPos> area : map.protectedAreas()) if (isBlockInArea(block, area)) return true;
 
         return map.protectedBlocks().contains(SimpleBlockPos.fromLocation(block.getLocation()));
 
@@ -530,6 +536,84 @@ public class HeadWarsGame implements Listener {
 
     }
 
+    public void handlePlayerDeath(@NotNull Player player) {
+
+        player.teleport(map.lobbySpawn().asPosition().toLocation(world));
+        player.setGameMode(GameMode.SPECTATOR);
+        PlayerInventory inventory = player.getInventory();
+
+        ItemStack[] armor = inventory.getArmorContents();
+
+        ItemStack[] newInventory = new ItemStack[inventory.getSize()];
+        for (int i = 0; i < newInventory.length; i++) {
+            ItemStack item = inventory.getItem(i);
+
+            if (item == null) {
+                newInventory[i] = null;
+                continue;
+            }
+
+            Material itemMaterial = item.getType();
+            if (ResourceGenerator.pickaxeTiers.contains(itemMaterial)) {
+
+                if (itemMaterial.equals(ResourceGenerator.pickaxeTiers.getFirst())) {
+                    newInventory[i] = item;
+                } else {
+                    newInventory[i] = item.withType(ResourceGenerator.pickaxeTiers.get(ResourceGenerator.pickaxeTiers.indexOf(itemMaterial) - 1));
+                }
+                continue;
+
+            }
+
+            if (ResourceGenerator.swordTiers.contains(itemMaterial)) {
+                newInventory[i] = item.withType(ResourceGenerator.swordTiers.getFirst());
+                continue;
+            }
+
+            newInventory[i] = null;
+
+        }
+
+        inventory.clear();
+
+        if (!playerTeams.get(player).unbrokenHeads().isEmpty()) {
+
+            deadPlayers.add(player);
+
+            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> {
+
+                deadPlayers.remove(player);
+                player.setGameMode(GameMode.SURVIVAL);
+                player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world));
+
+                inventory.setContents(newInventory);
+                inventory.setArmorContents(armor);
+                //if (!inventory.containsAtLeast(ResourceGenerator.sword, 1)) player.give(ResourceGenerator.sword);
+
+            }, 100);
+
+            AtomicInteger secs = new AtomicInteger(5);
+            Bukkit.getScheduler().runTaskTimer(HeadWars.getInstance(), task -> {
+
+                player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("Respawn in: " + secs)));
+                player.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(1).build(), Sound.Emitter.self());
+                secs.getAndDecrement();
+
+                if (secs.get() == 0) task.cancel();
+
+            }, 0, 20);
+
+        } else {
+
+            player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("You can't respawn anymore", NamedTextColor.RED)));
+            playerTeams.get(player).players().remove(player);
+            deadPlayers.add(player);
+            checkWinCondition();
+
+        }
+
+    }
+
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
 
@@ -546,6 +630,8 @@ public class HeadWarsGame implements Listener {
         if (Objects.equals(event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "item"), PersistentDataType.STRING), "fireball")) {
             event.setCancelled(true);
         }
+
+        for (Pair<SimpleBlockPos, SimpleBlockPos> area : map.noPlaceAreas()) if (isBlockInArea(block, area)) event.setCancelled(true);
 
     }
 
@@ -657,56 +743,7 @@ public class HeadWarsGame implements Listener {
     @EventHandler
     public void onPlayerDeath(@NotNull PlayerDeathEvent event) {
 
-        Player player = event.getPlayer();
-        if (player.getLocation().getWorld() != world) return;
-
-        player.setGameMode(GameMode.SPECTATOR);
-        PlayerInventory inventory = player.getInventory();
-
-        ItemStack[] armor = {
-            inventory.getItem(EquipmentSlot.HEAD).clone(),
-            inventory.getItem(EquipmentSlot.CHEST).clone(),
-            inventory.getItem(EquipmentSlot.LEGS).clone(),
-            inventory.getItem(EquipmentSlot.FEET).clone()
-        };
-        inventory.clear();
-
-        if (!playerTeams.get(player).unbrokenHeads().isEmpty()) {
-
-            deadPlayers.add(player);
-
-            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> {
-
-                deadPlayers.remove(player);
-                player.setGameMode(GameMode.SURVIVAL);
-                player.teleport(playerTeams.get(player).mapTeam().getSpawnPosition().asPosition().toLocation(world));
-
-                inventory.setItem(EquipmentSlot.HEAD, armor[0]);
-                inventory.setItem(EquipmentSlot.CHEST, armor[1]);
-                inventory.setItem(EquipmentSlot.LEGS, armor[2]);
-                inventory.setItem(EquipmentSlot.FEET, armor[3]);
-
-            }, 100);
-
-            AtomicInteger secs = new AtomicInteger(5);
-            Bukkit.getScheduler().runTaskTimer(HeadWars.getInstance(), task -> {
-
-                player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("Respawn in: " + secs)));
-                player.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(1).build(), Sound.Emitter.self());
-                secs.getAndDecrement();
-
-                if (secs.get() == 0) task.cancel();
-
-            }, 0, 20);
-
-        } else {
-
-            player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("You can't respawn anymore", NamedTextColor.RED)));
-            playerTeams.get(player).players().remove(player);
-            deadPlayers.add(player);
-            checkWinCondition();
-
-        }
+        handlePlayerDeath(event.getPlayer());
 
     }
 
@@ -719,6 +756,17 @@ public class HeadWarsGame implements Listener {
         if (event.getClickedInventory() == player.getInventory() && ( event.getSlot() == 39 ||
             event.getSlot() == 38 || event.getSlot() == 37 || event.getSlot() == 36)
         ) event.setCancelled(true);
+
+    }
+
+    @EventHandler
+    public void onPlayerMove(@NotNull PlayerMoveEvent event) {
+
+        Player player = event.getPlayer();
+
+        if (!player.getWorld().equals(world)) return;
+
+        if (player.getLocation().y() < 0) handlePlayerDeath(player);
 
     }
 

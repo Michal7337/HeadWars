@@ -1,10 +1,13 @@
 package win.codingboulder.headWars.util;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
@@ -76,6 +79,23 @@ public class Util {
 
     public static boolean isWool(@NotNull Block block) {
         return block.getType().toString().contains("_WOOL");
+    }
+
+    public static Component getItemCostComponent(@NotNull ItemStack cost) {
+
+        Component component;
+
+        switch (cost.getType()) {
+
+            case IRON_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(cost.getAmount() + " iron", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false);
+            case GOLD_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(cost.getAmount() + " gold", NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false);
+            case DIAMOND -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(cost.getAmount() + " diamond", NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC, false);
+            default -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(cost.getAmount() + " ")).append(cost.displayName()).decoration(TextDecoration.ITALIC, false);
+
+        }
+
+        return component;
+
     }
 
 }

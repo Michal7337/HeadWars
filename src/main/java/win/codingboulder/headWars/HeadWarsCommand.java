@@ -38,6 +38,7 @@ import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.SimpleFinePos;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -474,6 +475,29 @@ public class HeadWarsCommand {
 
                                                     })))
 
+                                            .then(Commands.literal("addNoPlaceArea")
+                                                .then(Commands.argument("pos1", ArgumentTypes.blockPosition())
+                                                    .then(Commands.argument("pos2", ArgumentTypes.blockPosition())
+                                                        .executes(context -> {
+
+                                                            HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
+                                                            if (map == null) {
+                                                                context.getSource().getSender().sendRichMessage("<red>This map doesn't exist or isn't loaded/detected!");
+                                                                return 1;
+                                                            }
+
+                                                            if (map.noPlaceAreas() == null) map.setNoPlaceAreas(new ArrayList<>());
+                                                            map.noPlaceAreas().add(Pair.of(
+                                                                SimpleBlockPos.fromCmdArgument("pos1", context),
+                                                                SimpleBlockPos.fromCmdArgument("pos2", context)
+                                                            ));
+
+                                                            map.updateMapFile();
+
+                                                            return 1;
+
+                                                        }))))
+
                                         )
 
                                 )
@@ -838,6 +862,20 @@ public class HeadWarsCommand {
                                             return 1;
 
                                         }))
+
+                                    .then(Commands.literal("set-item-gen")
+                                        .requires(commandSourceStack -> commandSourceStack.getSender() instanceof Player)
+                                        .then(Commands.argument("generator-id", StringArgumentType.word())
+                                            .executes(context -> {
+
+                                                Player player = (Player) context.getSource().getSender();
+
+                                                player.getInventory().getItemInMainHand().editPersistentDataContainer(pcd ->
+                                                    pcd.set(new NamespacedKey("headwars", "generator_id"), PersistentDataType.STRING, StringArgumentType.getString(context, "generator-id")));
+
+                                                return 1;
+
+                                            })))
 
                                 )
 
