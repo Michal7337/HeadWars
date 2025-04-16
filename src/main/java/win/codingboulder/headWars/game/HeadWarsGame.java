@@ -22,9 +22,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -96,7 +94,7 @@ public class HeadWarsGame implements Listener {
 
     private void initialise() {
 
-        Bukkit.getServer().getPluginManager().registerEvents(this, HeadWars.getInstance());
+        Bukkit.getServer().getPluginManager().registerEvents(this, plugin);
 
         map.teams().forEach((color, team) -> teams.add(new GameTeam(team, this))); //create game teams
         map.clickGenerators().forEach(generator -> clickGenerators.put(generator.left().asPosition(), generator.right().asPosition()));
@@ -269,8 +267,8 @@ public class HeadWarsGame implements Listener {
 
         createScoreboard();
 
-        runEverySecondTask.runTaskTimer(HeadWars.getInstance(), 0, 20);
-        runEveryTickTask.runTaskTimer(HeadWars.getInstance(), 0, 1);
+        runEverySecondTask.runTaskTimer(plugin, 0, 20);
+        runEveryTickTask.runTaskTimer(plugin, 0, 1);
 
     }
 
@@ -370,7 +368,7 @@ public class HeadWarsGame implements Listener {
 
         allPlayersAudience.sendMessage(Component.text("Instance closes in 30 seconds", NamedTextColor.GRAY));
 
-        Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), this::handleGameStop, 600);
+        Bukkit.getScheduler().runTaskLater(plugin, this::handleGameStop, 600);
 
     }
 
@@ -400,7 +398,7 @@ public class HeadWarsGame implements Listener {
         players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
 
         Bukkit.unloadWorld(world, false);
-        try { Util.deleteDirectory(worldFile); } catch (IOException e) {HeadWars.getInstance().getLogger().warning("An error occurred while deleting game world!");}
+        try { Util.deleteDirectory(worldFile); } catch (IOException e) {plugin.getLogger().warning("An error occurred while deleting game world!");}
 
         HeadWarsGameManager.activeGames().remove(this);
         HeadWarsGameManager.activeGameNames.remove(worldFile.getName());
@@ -413,7 +411,7 @@ public class HeadWarsGame implements Listener {
         players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
 
         Bukkit.unloadWorld(world, false);
-        try { Util.deleteDirectory(worldFile); } catch (IOException e) {HeadWars.getInstance().getLogger().warning("An error occurred while deleting game world!");}
+        try { Util.deleteDirectory(worldFile); } catch (IOException e) {plugin.getLogger().warning("An error occurred while deleting game world!");}
 
     }
 
@@ -580,7 +578,7 @@ public class HeadWarsGame implements Listener {
 
             deadPlayers.add(player);
 
-            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> {
+            Bukkit.getScheduler().runTaskLater(plugin, task -> {
 
                 deadPlayers.remove(player);
                 player.setGameMode(GameMode.SURVIVAL);
@@ -590,10 +588,13 @@ public class HeadWarsGame implements Listener {
                 inventory.setArmorContents(armor);
                 //if (!inventory.containsAtLeast(ResourceGenerator.sword, 1)) player.give(ResourceGenerator.sword);
 
+                immunePlayers.add(player);
+                Bukkit.getScheduler().runTaskLater(plugin, task2 -> immunePlayers.remove(player), 100);
+
             }, 100);
 
             AtomicInteger secs = new AtomicInteger(5);
-            Bukkit.getScheduler().runTaskTimer(HeadWars.getInstance(), task -> {
+            Bukkit.getScheduler().runTaskTimer(plugin, task -> {
 
                 player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("Respawn in: " + secs)));
                 player.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(1).build(), Sound.Emitter.self());
@@ -642,7 +643,7 @@ public class HeadWarsGame implements Listener {
         if (Objects.equals(player.getInventory().getItemInMainHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "item"), PersistentDataType.STRING), "fireball")) {
             event.setCancelled(true);
             player.getInventory().removeItem(player.getInventory().getItemInMainHand().asOne());
-            player.launchProjectile(Fireball.class, player.getLocation().getDirection().multiply(3));
+            player.launchProjectile(Fireball.class, player.getLocation().getDirection().multiply(2));
         }
 
         if (event.getClickedBlock() == null) return;
@@ -655,7 +656,7 @@ public class HeadWarsGame implements Listener {
         Location location = event.getClickedBlock().getLocation();
 
         //If clicked the button generator
-        if (clickGenerators.containsKey(Position.block(location))) {
+        if (clickGenerators.containsKey(Position.block(location)) && !player.isSneaking()) {
 
             event.setCancelled(true);
 
@@ -767,6 +768,23 @@ public class HeadWarsGame implements Listener {
         if (!player.getWorld().equals(world)) return;
 
         if (player.getLocation().y() < 0) handlePlayerDeath(player);
+
+    }
+
+    private final ArrayList<Player> immunePlayers = new ArrayList<>();
+    @EventHandler
+    public void onPlayerDamage(@NotNull EntityDamageByEntityEvent event) {
+
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        if (immunePlayers.contains(player)) {
+            event.setCancelled(true);
+            return;
+        }
+
+        if (!(event.getDamager() instanceof Player damager)) return;
+
+        immunePlayers.remove(damager);
 
     }
 

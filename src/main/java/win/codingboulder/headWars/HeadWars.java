@@ -9,10 +9,8 @@ import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
-import win.codingboulder.headWars.util.Util;
 
 import java.io.File;
-import java.io.IOException;
 
 public final class HeadWars extends JavaPlugin {
 

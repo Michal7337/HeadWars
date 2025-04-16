@@ -18,7 +18,6 @@ import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.items.*;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 
