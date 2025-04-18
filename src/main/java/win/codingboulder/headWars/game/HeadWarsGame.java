@@ -19,14 +19,13 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
@@ -49,10 +48,7 @@ import win.codingboulder.headWars.util.Util;
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -185,7 +181,7 @@ public class HeadWarsGame implements Listener {
     public void addPlayer(Player player) {
 
         if (isStarted) return;
-        if (players.size() == maxPlayers) { return; }
+        if (players.size() == maxPlayers) return;
 
         teams.get(teamAddingNumber).players().add(player);
         playerTeams.put(player, teams.get(teamAddingNumber));
@@ -396,6 +392,11 @@ public class HeadWarsGame implements Listener {
 
         players.forEach(HeadWarsGameManager.playersInGames::remove);
         players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
+
+        runEveryTickTask.cancel();
+        runEverySecondTask.cancel();
+
+        HandlerList.unregisterAll(this);
 
         Bukkit.unloadWorld(world, false);
         try { Util.deleteDirectory(worldFile); } catch (IOException e) {plugin.getLogger().warning("An error occurred while deleting game world!");}
@@ -785,6 +786,50 @@ public class HeadWarsGame implements Listener {
         if (!(event.getDamager() instanceof Player damager)) return;
 
         immunePlayers.remove(damager);
+
+    }
+
+    private final HashMap<UUID, GameTeam> disconnectedPlayers = new HashMap<>();
+    private final HashMap<UUID, Player> disconnectedPlayerObjects = new HashMap<>();
+
+    @EventHandler
+    public void onPlayerLeave(@NotNull PlayerQuitEvent event) {
+
+        Player player = event.getPlayer();
+        if (!players.contains(player)) return;
+
+        players.remove(player);
+        playerTeams.get(player).players().remove(player);
+        playerTeams.remove(player);
+
+        if (!isStarted) return;
+
+        disconnectedPlayers.put(player.getUniqueId(), playerTeams.get(player));
+        disconnectedPlayerObjects.put(player.getUniqueId(), player);
+
+        checkWinCondition();
+
+    }
+
+    @EventHandler
+    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
+
+        Player player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+        if (!disconnectedPlayers.containsKey(playerUUID)) return;
+        Player oldPlayer = disconnectedPlayerObjects.get(playerUUID);
+
+        players.add(player);
+        disconnectedPlayers.get(playerUUID).players().add(player);
+        playerTeams.put(player, disconnectedPlayers.get(playerUUID));
+
+        playerScoreboards.put(player, playerScoreboards.get(oldPlayer));
+        playerScoreboards.remove(oldPlayer);
+
+        handlePlayerDeath(player);
+
+        disconnectedPlayers.remove(playerUUID);
+        disconnectedPlayerObjects.remove(playerUUID);
 
     }
 
