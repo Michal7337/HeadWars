@@ -14,6 +14,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.stream.Stream;
 
@@ -96,6 +97,16 @@ public class Util {
 
         return component;
 
+    }
+
+    public static String encodeItemStack(ItemStack item) {
+        if (item == null) return "";
+        return Base64.getEncoder().encodeToString(item.serializeAsBytes());
+    }
+
+    public static ItemStack decodeItemStack(String base64) {
+        if (base64 == null || base64.isEmpty()) return ItemStack.empty();
+        return ItemStack.deserializeBytes(Base64.getDecoder().decode(base64));
     }
 
 }
