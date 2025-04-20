@@ -8,6 +8,7 @@ import win.codingboulder.headWars.HeadWars;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ItemShop implements Serializable {
 
@@ -16,6 +17,7 @@ public class ItemShop implements Serializable {
     private int rows;
 
     private ArrayList<ItemStack> items;
+    private ItemStack[] itemsArray;
 
     public ItemShop(String id, String title, int rows) {
 
@@ -29,18 +31,16 @@ public class ItemShop implements Serializable {
     }
 
     @Serial
-    private void writeObject(ObjectOutputStream out) throws IOException {
+    private void writeObject(@NotNull ObjectOutputStream out) throws IOException {
 
-        ArrayList<byte[]> itemStacks = new ArrayList<>();
-        for (ItemStack item : items) {
-            if (item == null) itemStacks.add(null);
-            else itemStacks.add(item.serializeAsBytes());
-        }
+        byte[] itemsArray = ItemStack.serializeItemsAsBytes(items);
 
         out.writeObject(id);
         out.writeObject(title);
         out.write(rows);
-        out.writeObject(itemStacks);
+
+        out.writeInt(itemsArray.length);
+        out.write(itemsArray);
 
     }
 
@@ -50,13 +50,11 @@ public class ItemShop implements Serializable {
         id = (String) in.readObject();
         title = (String) in.readObject();
         rows = in.read();
-        items = new ArrayList<>();
 
-        @SuppressWarnings("unchecked") ArrayList<byte[]> itemStacks = (ArrayList<byte[]>) in.readObject();
-        itemStacks.forEach(item -> {
-            if (item == null) items.add(null);
-            else items.add(ItemStack.deserializeBytes(item));
-        });
+        int arraySize = in.readInt();
+        byte[] itemsArrayB = in.readNBytes(arraySize);
+        itemsArray = ItemStack.deserializeItemsFromBytes(itemsArrayB);
+        items = new ArrayList<>(Arrays.asList(itemsArray));
 
     }
 
@@ -138,6 +136,10 @@ public class ItemShop implements Serializable {
 
     public void items(ArrayList<ItemStack> items) {
         this.items = items;
+    }
+
+    public ItemStack[] itemsArray() {
+        return itemsArray;
     }
 
 }

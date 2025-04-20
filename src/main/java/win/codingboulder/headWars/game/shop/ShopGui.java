@@ -23,24 +23,19 @@ import java.util.Objects;
 
 public class ShopGui implements InventoryHolder, Listener {
 
+    public static final String namespace = "headwars";
+    public static final NamespacedKey itemIdKey = new NamespacedKey(namespace, "itemid");
+    public static final NamespacedKey shopActionKey = new NamespacedKey(namespace, "shop_action");
+    public static final NamespacedKey shopPriceKey = new NamespacedKey(namespace, "shop_price");
+    public static final NamespacedKey shopItemKey = new NamespacedKey(namespace, "shop_item");
+
+    private ItemShop itemShop;
     private final Inventory inventory;
 
     public ShopGui(@NotNull ItemShop itemShop, Player player) {
 
+        this.itemShop = itemShop;
         inventory = HeadWars.getInstance().getServer().createInventory(this, itemShop.rows()*9, MiniMessage.miniMessage().deserialize(itemShop.title()));
-
-        for (int i = 0; i < inventory.getSize(); i++) {
-
-            ItemStack item = itemShop.items().get(i);
-            if (item == null) continue;
-            PersistentDataContainerView pdc = item.getPersistentDataContainer();
-            if (!pdc.has(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING)) continue;
-
-            itemShop.items().set(i, handleCustomItemRender(item, player));
-
-        }
-
-        inventory.setContents(itemShop.items().toArray(new ItemStack[0]));
 
     }
 
@@ -56,6 +51,12 @@ public class ShopGui implements InventoryHolder, Listener {
     }
 
     public static ShopGui dummyGUI = new ShopGui();
+
+    public void renderItems() {
+
+
+
+    }
 
     @EventHandler
     public void onClick(@NotNull InventoryClickEvent event) {
