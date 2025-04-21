@@ -1,8 +1,6 @@
 package win.codingboulder.headWars.game.shop;
 
-import io.papermc.paper.persistence.PersistentDataContainerView;
 import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.apache.commons.lang3.ArrayUtils;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -11,6 +9,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
@@ -18,8 +18,7 @@ import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.items.*;
 
-import java.util.HashMap;
-import java.util.Objects;
+import java.util.*;
 
 public class ShopGui implements InventoryHolder, Listener {
 
@@ -28,109 +27,15 @@ public class ShopGui implements InventoryHolder, Listener {
     public static final NamespacedKey shopActionKey = new NamespacedKey(namespace, "shop_action");
     public static final NamespacedKey shopPriceKey = new NamespacedKey(namespace, "shop_price");
     public static final NamespacedKey shopItemKey = new NamespacedKey(namespace, "shop_item");
+    public static final NamespacedKey shopMenuKey = new NamespacedKey(namespace, "shop_menu");
 
-    private ItemShop itemShop;
+    public static NamespacedKey shopPriceItemKey = new NamespacedKey(namespace, "item");
+    public static NamespacedKey shopPriceAmountKey = new NamespacedKey(namespace, "amount");
+
+    private final ItemShop itemShop;
     private final Inventory inventory;
-
-    public ShopGui(@NotNull ItemShop itemShop, Player player) {
-
-        this.itemShop = itemShop;
-        inventory = HeadWars.getInstance().getServer().createInventory(this, itemShop.rows()*9, MiniMessage.miniMessage().deserialize(itemShop.title()));
-
-    }
-
-    /**
-     * Empty constructor FOR REGISTERING EVENTS ONLY, DO NOT USE!
-     */
-    public ShopGui() {
-        inventory = null;
-    }
-
-    public @NotNull Inventory getInventory() {
-        return inventory;
-    }
-
-    public static ShopGui dummyGUI = new ShopGui();
-
-    public void renderItems() {
-
-
-
-    }
-
-    @EventHandler
-    public void onClick(@NotNull InventoryClickEvent event) {
-
-        Inventory inventory = event.getClickedInventory();
-        Player player = (Player) event.getWhoClicked();
-
-        if (inventory == null) return;
-        if (!(inventory.getHolder() instanceof ShopGui shopGui)) return;
-
-        event.setCancelled(true);
-
-        ItemStack clickedItem = event.getCurrentItem();
-        if (clickedItem == null) return;
-
-        PersistentDataContainerView pdc = clickedItem.getPersistentDataContainer();
-
-        String shopAction = pdc.get(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING);
-        if (shopAction == null) return;
-
-        if (shopAction.equals("buy")) {
-
-            ItemStack itemPrice;
-            byte[] priceEnc = pdc.get(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY);
-            if (priceEnc == null) itemPrice = ItemStack.of(Material.AIR);
-            else if (ArrayUtils.isEmpty(priceEnc)) itemPrice = ItemStack.of(Material.AIR);
-            else itemPrice = ItemStack.deserializeBytes(priceEnc);
-
-            if (pdc.has(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY)) {
-
-                byte[] itemToGiveArr = pdc.get(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY);
-                if (itemToGiveArr == null) return;
-
-                if (!(player.getInventory().containsAtLeast(itemPrice, itemPrice.getAmount()))) {
-                    player.sendRichMessage("<red>You can't afford this!");
-                    return;
-                }
-
-                ItemStack itemToGive = ItemStack.deserializeBytes(itemToGiveArr);
-                player.give(itemToGive);
-
-                player.getInventory().removeItem(itemPrice);
-                player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 2, 2);
-
-            } else if (pdc.has(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING)) {
-
-                String itemId = pdc.get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
-                if (itemId == null) return;
-
-                if (!(player.getInventory().containsAtLeast(itemPrice, itemPrice.getAmount()))) {
-                    player.sendRichMessage("<red>You can't afford this!");
-                    return;
-                }
-
-                ItemStack item = handleCustomItemBuy(clickedItem, player, inventory);
-                if (item.getType() != Material.AIR) player.give(item);
-
-                player.getInventory().removeItem(itemPrice);
-                player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 2, 2);
-
-            }
-
-        } else if (shopAction.equals("open-menu")) {
-
-            String shopToOpenS = pdc.get(new NamespacedKey("headwars", "menu"), PersistentDataType.STRING);
-            if (shopToOpenS == null) return;
-            ItemShop shopToOpen = ShopManager.itemShops.get(shopToOpenS);
-            if (shopToOpen == null) return;
-            player.playSound(player, Sound.BLOCK_NOTE_BLOCK_HAT, 5, 1);
-            Bukkit.getScheduler().runTask(HeadWars.getInstance(), task -> shopToOpen.openShop(player));
-
-        }
-
-    }
+    private final Player player;
+    private HeadWarsGame game;
 
     public static HashMap<String, CustomShopItem> customItemHandlers = new HashMap<>();
     static {
@@ -149,30 +54,306 @@ public class ShopGui implements InventoryHolder, Listener {
 
     }
 
-    public @NotNull ItemStack handleCustomItemRender(@NotNull ItemStack shopItem, Player player) {
+    public ShopGui(ItemShop itemShop, Player player) {
 
-        String itemId = shopItem.getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
-        HeadWarsGame game = HeadWarsGameManager.playersInGames.get(player);
+        this.itemShop = itemShop;
+        this.player = player;
 
-        if (!customItemHandlers.containsKey(itemId)) return ItemStack.of(Material.BARRIER);
-        return customItemHandlers.get(itemId).handleRender(shopItem, player, game);
+        if (itemShop == null) {inventory = null; return;}
+        inventory = HeadWars.getInstance().getServer().createInventory(this, itemShop.rows()*9, MiniMessage.miniMessage().deserialize(itemShop.title()));
 
-    }
+        game = HeadWarsGameManager.playersInGames.get(player);
 
-    private @NotNull ItemStack handleCustomItemBuy(@NotNull ItemStack shopItem, Player player, Inventory inventory) {
-
-        String itemId = shopItem.getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
-        if (itemId == null) return ItemStack.empty();
-        HeadWarsGame game = HeadWarsGameManager.playersInGames.get(player);
-
-        if (!customItemHandlers.containsKey(itemId)) return ItemStack.of(Material.AIR);
-        return customItemHandlers.get(itemId).handleBuy(shopItem, player, inventory, game);
+        renderItems();
 
     }
 
-    public void reRenderItem(ItemStack shopItem, Player player, @NotNull Inventory inventory) {
+    @Override
+    public @NotNull Inventory getInventory() {
+        return inventory;
+    }
 
-        for (int i = 0; i < inventory.getSize(); i++) if (Objects.equals(inventory.getContents()[i], shopItem)) inventory.setItem(i, handleCustomItemRender(Objects.requireNonNull(inventory.getContents()[i]), player));
+    public ItemShop itemShop() {
+        return itemShop;
+    }
+
+    public Player player() {
+        return player;
+    }
+
+    public HeadWarsGame game() {
+        return game;
+    }
+
+    public void openShop(@NotNull Player player) {
+
+        player.openInventory(inventory);
+
+    }
+
+    public void renderItems() {
+
+        ItemStack[] items = itemShop.itemsArray();
+        ItemStack[] renderedItems = new ItemStack[items.length];
+
+        for (int i = 0; i < items.length; i++) {
+
+            ItemStack shopItem = items[i];
+
+            String itemId = getItemId(shopItem);
+            if (itemId == null) renderedItems[i] = shopItem;
+
+            if (customItemHandlers.containsKey(itemId)) renderedItems[i] = customItemHandlers.get(itemId).handleRender(shopItem, player, game, this);
+            else renderedItems[i] = shopItem;
+
+        }
+
+        inventory.setContents(renderedItems);
+
+    }
+
+    public void reRenderItem(ItemStack item) {
+
+        ItemStack[] items = inventory.getContents();
+
+        for (int i = 0; i < items.length; i++) {
+
+            ItemStack shopItem = items[i];
+
+            if (item == null || shopItem == null || !Objects.equals(item, shopItem)) continue;
+
+            String itemId = getItemId(shopItem);
+            if (itemId == null) continue;
+            if (!customItemHandlers.containsKey(itemId)) continue;
+
+            ItemStack renderedItem = customItemHandlers.get(itemId).handleRender(shopItem, player, game, this);
+            inventory.setItem(i, renderedItem);
+
+        }
+
+    }
+
+    public static void handleItemBuy(ItemStack item, @NotNull ShopGui shop) {
+
+        Player player = shop.player;
+
+        if (!canPlayerAffordItem(player, item)) {
+            player.sendRichMessage("<red>You can't afford this!");
+            return;
+        }
+
+        ItemStack boughtItem;
+
+        String itemId = getItemId(item);
+        if (itemId == null) { // if it's a normal item
+
+            boughtItem = getItemBought(item);
+
+        } else { // if it's an item with custom handling
+
+            if (customItemHandlers.containsKey(itemId)) boughtItem = customItemHandlers.get(itemId).handleBuy(item, player, shop.game, shop);
+            else boughtItem = ItemStack.empty();
+
+        }
+
+        if (boughtItem != null && !boughtItem.isEmpty()) player.give(boughtItem);
+        removeCostFromPlayer(item, player);
+
+        player.playSound(player, Sound.BLOCK_NOTE_BLOCK_PLING, 2, 2);
+
+    }
+
+
+    @EventHandler
+    public void onClick(@NotNull InventoryClickEvent event) {
+
+        Inventory inventory = event.getClickedInventory();
+        Player player = (Player) event.getWhoClicked();
+
+        if (inventory == null) return;
+        if (!(inventory.getHolder() instanceof ShopGui shopGui)) return;
+
+        event.setCancelled(true);
+
+        ItemStack clickedItem = event.getCurrentItem();
+        if (clickedItem == null) return;
+
+        String shopAction = getItemAction(clickedItem);
+        if (shopAction == null) return;
+
+        if (shopAction.equals("buy")) {
+
+            handleItemBuy(clickedItem, shopGui);
+
+        } else if (shopAction.equals("open-menu")) {
+
+            String menu = getItemMenu(clickedItem);
+            if (menu == null) return;
+            ItemShop shop = ItemShop.registeredItemShops.get(menu);
+            if (shop == null) return;
+
+            ShopGui newShop = new ShopGui(shop, player);
+            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> newShop.openShop(player), 1);
+            player.playSound(player, Sound.BLOCK_NOTE_BLOCK_HAT, 5, 1);
+
+        }
+
+    }
+
+    public static String getItemId(@NotNull ItemStack item) {
+
+        return item.getPersistentDataContainer().get(itemIdKey, PersistentDataType.STRING);
+
+    }
+
+    public static String getItemAction(@NotNull ItemStack item) {
+
+        return item.getPersistentDataContainer().get(shopActionKey, PersistentDataType.STRING);
+
+    }
+
+    public static ItemStack getItemBought(@NotNull ItemStack item) {
+
+        byte[] itemArr = item.getPersistentDataContainer().get(shopItemKey, PersistentDataType.BYTE_ARRAY);
+        if (itemArr == null) return ItemStack.empty();
+        return ItemStack.deserializeBytes(itemArr);
+
+    }
+
+    public static String getItemMenu(@NotNull ItemStack item) {
+
+        return item.getPersistentDataContainer().get(shopMenuKey, PersistentDataType.STRING);
+
+    }
+
+    public static void setItemId(@NotNull ItemStack item, String id) {
+
+        item.editPersistentDataContainer(pdc -> pdc.set(itemIdKey, PersistentDataType.STRING, id));
+
+    }
+
+    public static void setItemAction(@NotNull ItemStack item, String action) {
+
+        item.editPersistentDataContainer(pdc -> pdc.set(shopActionKey, PersistentDataType.STRING, action));
+
+    }
+
+    public static void setItemBought(@NotNull ItemStack item, ItemStack boughtItem) {
+
+        item.editPersistentDataContainer(pdc -> pdc.set(shopItemKey, PersistentDataType.BYTE_ARRAY, boughtItem.serializeAsBytes()));
+
+    }
+
+    public static void setItemMenu(@NotNull ItemStack item, String menu) {
+
+        item.editPersistentDataContainer(pdc -> pdc.set(itemIdKey, PersistentDataType.STRING, menu));
+
+    }
+
+    public static void addItemPrice(@NotNull ItemStack item, ItemStack price, int amount) {
+
+        item.editPersistentDataContainer(pdc -> {
+
+            PersistentDataContainer newPrice = pdc.getAdapterContext().newPersistentDataContainer();
+            newPrice.set(shopPriceAmountKey, PersistentDataType.INTEGER, amount);
+            newPrice.set(shopPriceItemKey, PersistentDataType.BYTE_ARRAY, item.serializeAsBytes());
+
+            List<PersistentDataContainer> priceList = pdc.get(shopPriceKey, PersistentDataType.LIST.dataContainers());
+
+            if (priceList == null) {
+                pdc.set(shopPriceKey, PersistentDataType.LIST.dataContainers(), List.of(newPrice));
+                return;
+            }
+
+            priceList.add(newPrice);
+            pdc.set(shopPriceKey, PersistentDataType.LIST.dataContainers(), priceList);
+
+        });
+
+    }
+
+    public static @NotNull HashMap<ItemStack, Integer> getItemPrice(@NotNull ItemStack item) {
+
+        HashMap<ItemStack, Integer> itemPrice = new HashMap<>();
+
+        List<PersistentDataContainer> priceList = item.getPersistentDataContainer().get(shopPriceKey, PersistentDataType.LIST.dataContainers());
+        if (priceList == null) return itemPrice;
+
+        for (PersistentDataContainer pdc : priceList) {
+
+            byte[] priceArr = pdc.get(shopPriceItemKey, PersistentDataType.BYTE_ARRAY);
+            if (priceArr == null) continue;
+            ItemStack price = ItemStack.deserializeBytes(priceArr);
+
+            Integer priceAmount = pdc.get(shopPriceAmountKey, PersistentDataType.INTEGER);
+            if (priceAmount == null) continue;
+
+            itemPrice.put(price, priceAmount);
+
+        }
+
+        return itemPrice;
+
+    }
+
+    public static void setItemPrice(@NotNull ItemStack item, @NotNull HashMap<ItemStack, Integer> price) {
+
+        ArrayList<PersistentDataContainer> priceList = new ArrayList<>();
+
+        price.forEach((priceItem, priceAmount) -> {
+
+            PersistentDataContainer newPrice = item.getPersistentDataContainer().getAdapterContext().newPersistentDataContainer();
+            newPrice.set(shopPriceAmountKey, PersistentDataType.INTEGER, priceAmount);
+            newPrice.set(shopPriceItemKey, PersistentDataType.BYTE_ARRAY, priceItem.serializeAsBytes());
+
+            priceList.add(newPrice);
+
+        });
+
+        item.editPersistentDataContainer(pdc -> pdc.set(shopPriceKey, PersistentDataType.LIST.dataContainers(), priceList));
+
+    }
+
+    public static boolean canPlayerAffordItem(@NotNull Player player, ItemStack item) {
+
+        boolean canAfford = true;
+
+        HashMap<ItemStack, Integer> itemPrice = getItemPrice(item);
+        PlayerInventory playerInv = player.getInventory();
+
+        for (Map.Entry<ItemStack, Integer> entry : itemPrice.entrySet())
+            if (!playerInv.containsAtLeast(entry.getKey(), entry.getValue())) canAfford = false;
+
+        return canAfford;
+
+    }
+
+    public static void removeCostFromPlayer(ItemStack item, @NotNull Player player) {
+
+        HashMap<ItemStack, Integer> itemPrice = getItemPrice(item);
+
+        PlayerInventory playerInventory = player.getInventory();
+        itemPrice.forEach((priceItem, priceAmount) -> playerInventory.removeItem(getCostItemsArray(priceItem, priceAmount)));
+
+    }
+
+    public static ItemStack @NotNull [] getCostItemsArray(ItemStack item, int amount) {
+
+        if (amount == 0) return new ItemStack[0];
+        int stackSize = item.getMaxStackSize();
+        ItemStack priceItem = item.asQuantity(stackSize);
+
+        int fullStacks = amount / stackSize;
+        int remainingItems = amount % stackSize;
+
+        int stacks; if (remainingItems != 0) stacks = fullStacks + 1; else stacks = fullStacks;
+
+        ItemStack[] items = new ItemStack[stacks];
+
+        Arrays.fill(items, 0, fullStacks, priceItem);
+        items[fullStacks] = item.asQuantity(remainingItems);
+
+        return items;
 
     }
 

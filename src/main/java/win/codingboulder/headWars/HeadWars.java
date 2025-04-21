@@ -5,9 +5,9 @@ import win.codingboulder.headWars.game.GeneratorType;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.ResourceGenerator;
+import win.codingboulder.headWars.game.shop.ItemShop;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
 import win.codingboulder.headWars.game.shop.ShopGui;
-import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
 
 import java.io.File;
@@ -31,12 +31,12 @@ public final class HeadWars extends JavaPlugin {
         //noinspection UnstableApiUsage
         HeadWarsCommand.registerCommand(getLifecycleManager());
 
-        getServer().getPluginManager().registerEvents(new ShopConfigGUI(), this);
-        getServer().getPluginManager().registerEvents(new ShopGui(), this);
+        getServer().getPluginManager().registerEvents(new ShopConfigGUI(null), this);
+        getServer().getPluginManager().registerEvents(new ShopGui(null ,null), this);
         getServer().getPluginManager().registerEvents(new ResourceGenerator(null, null), this);
 
         HeadWarsMapManager.loadAllMaps();
-        ShopManager.loadAllShops();
+        ItemShop.loadAllShops();
         GeneratorType.reloadGeneratorTypes();
 
     }

@@ -8,17 +8,18 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.BlockPositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.FinePositionResolver;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -28,20 +29,20 @@ import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.HeadWarsGameManager;
 import win.codingboulder.headWars.game.shop.ItemShop;
 import win.codingboulder.headWars.game.shop.ShopConfigGUI;
-import win.codingboulder.headWars.game.shop.ShopManager;
+import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.maps.HeadWarsMap;
 import win.codingboulder.headWars.maps.HeadWarsMapManager;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
-import win.codingboulder.headWars.util.ColorArgument;
-import win.codingboulder.headWars.util.Pair;
-import win.codingboulder.headWars.util.SimpleBlockPos;
-import win.codingboulder.headWars.util.SimpleFinePos;
+import win.codingboulder.headWars.util.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+
+import static io.papermc.paper.command.brigadier.Commands.literal;
+import static io.papermc.paper.command.brigadier.Commands.argument;
 
 @SuppressWarnings("UnstableApiUsage")
 public class HeadWarsCommand {
@@ -50,14 +51,14 @@ public class HeadWarsCommand {
 
         lifecycleEventManager.registerEventHandler(LifecycleEvents.COMMANDS, event -> event.registrar().register(
 
-                Commands.literal("headwars")
+                literal("headwars")
 
-                        .then(Commands.literal("map")
+                        .then(literal("map")
 
-                                .then(Commands.literal("create")
-                                        .then(Commands.argument("id", StringArgumentType.word())
-                                                .then(Commands.argument("name", StringArgumentType.string())
-                                                        .then(Commands.argument("world", StringArgumentType.word())
+                                .then(literal("create")
+                                        .then(argument("id", StringArgumentType.word())
+                                                .then(argument("name", StringArgumentType.string())
+                                                        .then(argument("world", StringArgumentType.word())
                                                                 .executes(context -> {
 
                                                                     try {
@@ -81,11 +82,11 @@ public class HeadWarsCommand {
                                                                 }))))
                                 )
 
-                                .then(Commands.literal("edit")
-                                        .then(Commands.argument("id", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
+                                .then(literal("edit")
+                                        .then(argument("id", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
 
-                                                .then(Commands.literal("name")
-                                                        .then(Commands.argument("newName", StringArgumentType.string())
+                                                .then(literal("name")
+                                                        .then(argument("newName", StringArgumentType.string())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -102,8 +103,8 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("world")
-                                                        .then(Commands.argument("newWorld", StringArgumentType.word())
+                                                .then(literal("world")
+                                                        .then(argument("newWorld", StringArgumentType.word())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -120,8 +121,8 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("playersPerTeam")
-                                                        .then(Commands.argument("newPlayersPerTeam", IntegerArgumentType.integer(1))
+                                                .then(literal("playersPerTeam")
+                                                        .then(argument("newPlayersPerTeam", IntegerArgumentType.integer(1))
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -138,8 +139,8 @@ public class HeadWarsCommand {
 
                                                                     })))
 
-                                                .then(Commands.literal("addTeam")
-                                                        .then(Commands.argument("teamColor", new ColorArgument())
+                                                .then(literal("addTeam")
+                                                        .then(argument("teamColor", new ColorArgument())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -156,11 +157,11 @@ public class HeadWarsCommand {
 
                                                                     })))
 
-                                                .then(Commands.literal("editTeam")
-                                                        .then(Commands.argument("teamToEdit", new ColorArgument())
+                                                .then(literal("editTeam")
+                                                        .then(argument("teamToEdit", new ColorArgument())
 
-                                                                .then(Commands.literal("spawnPosition")
-                                                                        .then(Commands.argument("newSpawn", ArgumentTypes.finePosition(true))
+                                                                .then(literal("spawnPosition")
+                                                                        .then(argument("newSpawn", ArgumentTypes.finePosition(true))
                                                                                 .executes(context -> {
 
                                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -184,9 +185,9 @@ public class HeadWarsCommand {
 
                                                                                 })))
 
-                                                                .then(Commands.literal("setBaseArea")
-                                                                        .then(Commands.argument("baseCorner1", ArgumentTypes.blockPosition())
-                                                                                .then(Commands.argument("baseCorner2", ArgumentTypes.blockPosition())
+                                                                .then(literal("setBaseArea")
+                                                                        .then(argument("baseCorner1", ArgumentTypes.blockPosition())
+                                                                                .then(argument("baseCorner2", ArgumentTypes.blockPosition())
                                                                                         .executes(context -> {
 
                                                                                             HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -212,9 +213,9 @@ public class HeadWarsCommand {
 
                                                                                         }))))
 
-                                                                .then(Commands.literal("setBasePerimeter")
-                                                                        .then(Commands.argument("basePerimeterCorner1", ArgumentTypes.blockPosition())
-                                                                                .then(Commands.argument("basePerimeterCorner2", ArgumentTypes.blockPosition())
+                                                                .then(literal("setBasePerimeter")
+                                                                        .then(argument("basePerimeterCorner1", ArgumentTypes.blockPosition())
+                                                                                .then(argument("basePerimeterCorner2", ArgumentTypes.blockPosition())
                                                                                         .executes(context -> {
 
                                                                                             HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -240,8 +241,8 @@ public class HeadWarsCommand {
 
                                                                                         }))))
 
-                                                                .then(Commands.literal("addHead")
-                                                                        .then(Commands.argument("headToAdd", ArgumentTypes.blockPosition())
+                                                                .then(literal("addHead")
+                                                                        .then(argument("headToAdd", ArgumentTypes.blockPosition())
                                                                                 .executes(context -> {
 
                                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -265,8 +266,8 @@ public class HeadWarsCommand {
 
                                                                                 })))
 
-                                                                .then(Commands.literal("removeHead")
-                                                                        .then(Commands.argument("headToRemove", ArgumentTypes.blockPosition())
+                                                                .then(literal("removeHead")
+                                                                        .then(argument("headToRemove", ArgumentTypes.blockPosition())
                                                                                 .executes(context -> {
 
                                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -292,9 +293,9 @@ public class HeadWarsCommand {
 
                                                 )
 
-                                                .then(Commands.literal("addClickGenerator")
-                                                        .then(Commands.argument("buttonPosition", ArgumentTypes.blockPosition())
-                                                                .then(Commands.argument("itemSpawnPosition", ArgumentTypes.finePosition(true))
+                                                .then(literal("addClickGenerator")
+                                                        .then(argument("buttonPosition", ArgumentTypes.blockPosition())
+                                                                .then(argument("itemSpawnPosition", ArgumentTypes.finePosition(true))
                                                                         .executes(context -> {
 
                                                                             HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -314,8 +315,8 @@ public class HeadWarsCommand {
 
                                                                         }))))
 
-                                                .then(Commands.literal("removeClickGenerator")
-                                                        .then(Commands.argument("generatorButtonPosition", ArgumentTypes.blockPosition())
+                                                .then(literal("removeClickGenerator")
+                                                        .then(argument("generatorButtonPosition", ArgumentTypes.blockPosition())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -336,9 +337,9 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("addItemShop")
-                                                    .then(Commands.argument("itemShopEntity", ArgumentTypes.entity())
-                                                        .then(Commands.argument("itemShopID", StringArgumentType.word())
+                                                .then(literal("addItemShop")
+                                                    .then(argument("itemShopEntity", ArgumentTypes.entity())
+                                                        .then(argument("itemShopID", StringArgumentType.word())
                                                             .executes(context -> {
 
                                                                 HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -358,8 +359,8 @@ public class HeadWarsCommand {
 
                                                             }))))
 
-                                                .then(Commands.literal("removeItemShop")
-                                                        .then(Commands.argument("itemShopEntityToRemove", ArgumentTypes.entity())
+                                                .then(literal("removeItemShop")
+                                                        .then(argument("itemShopEntityToRemove", ArgumentTypes.entity())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -379,8 +380,8 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("addEmeraldGenerator")
-                                                        .then(Commands.argument("emeraldGeneratorPosition", ArgumentTypes.blockPosition())
+                                                .then(literal("addEmeraldGenerator")
+                                                        .then(argument("emeraldGeneratorPosition", ArgumentTypes.blockPosition())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -398,8 +399,8 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("removeEmeraldGenerator")
-                                                        .then(Commands.argument("emeraldGeneratorToRemovePosition", ArgumentTypes.blockPosition())
+                                                .then(literal("removeEmeraldGenerator")
+                                                        .then(argument("emeraldGeneratorToRemovePosition", ArgumentTypes.blockPosition())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -417,8 +418,8 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                                .then(Commands.literal("setLobbySpawn")
-                                                        .then(Commands.argument("lobbySpawnPosition", ArgumentTypes.finePosition())
+                                                .then(literal("setLobbySpawn")
+                                                        .then(argument("lobbySpawnPosition", ArgumentTypes.finePosition())
                                                                 .executes(context -> {
 
                                                                     HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -436,9 +437,9 @@ public class HeadWarsCommand {
 
                                                                 })))
 
-                                            .then(Commands.literal("addProtectedArea")
-                                                .then(Commands.argument("pos1", ArgumentTypes.blockPosition())
-                                                    .then(Commands.argument("pos2", ArgumentTypes.blockPosition())
+                                            .then(literal("addProtectedArea")
+                                                .then(argument("pos1", ArgumentTypes.blockPosition())
+                                                    .then(argument("pos2", ArgumentTypes.blockPosition())
                                                         .executes(context -> {
 
                                                             HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -458,8 +459,8 @@ public class HeadWarsCommand {
 
                                                         }))))
 
-                                            .then(Commands.literal("addProtectedBlock")
-                                                .then(Commands.argument("block", ArgumentTypes.blockPosition())
+                                            .then(literal("addProtectedBlock")
+                                                .then(argument("block", ArgumentTypes.blockPosition())
                                                     .executes(context -> {
 
                                                         HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -475,9 +476,9 @@ public class HeadWarsCommand {
 
                                                     })))
 
-                                            .then(Commands.literal("addNoPlaceArea")
-                                                .then(Commands.argument("pos1", ArgumentTypes.blockPosition())
-                                                    .then(Commands.argument("pos2", ArgumentTypes.blockPosition())
+                                            .then(literal("addNoPlaceArea")
+                                                .then(argument("pos1", ArgumentTypes.blockPosition())
+                                                    .then(argument("pos2", ArgumentTypes.blockPosition())
                                                         .executes(context -> {
 
                                                             HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("id", String.class));
@@ -502,11 +503,11 @@ public class HeadWarsCommand {
 
                                 )
 
-                                .then(Commands.literal("delete")
+                                .then(literal("delete")
 
                                 )
 
-                            .then(Commands.literal("reload-maps")
+                            .then(literal("reload-maps")
                                 .executes(context -> {
 
                                     HeadWars.getInstance().getServer().getScheduler().runTaskAsynchronously(HeadWars.getInstance(), task -> {
@@ -519,17 +520,17 @@ public class HeadWarsCommand {
                                 })
                             )
 
-                            .then(Commands.literal("global-config")
+                            .then(literal("global-config")
 
-                                .then(Commands.literal("itemshops")
+                                .then(literal("itemshops")
 
-                                    .then(Commands.literal("create")
-                                        .then(Commands.argument("id", StringArgumentType.word())
-                                            .then(Commands.argument("title", StringArgumentType.string())
-                                                .then(Commands.argument("rows", IntegerArgumentType.integer(1, 6))
+                                    .then(literal("create")
+                                        .then(argument("id", StringArgumentType.word())
+                                            .then(argument("title", StringArgumentType.string())
+                                                .then(argument("rows", IntegerArgumentType.integer(1, 6))
                                                     .executes(context -> {
 
-                                                        ItemShop itemShop = ShopManager.createShop(
+                                                        ItemShop itemShop = ItemShop.createShop(
                                                             context.getArgument("id", String.class),
                                                             context.getArgument("title", String.class),
                                                             context.getArgument("rows", Integer.class)
@@ -539,20 +540,22 @@ public class HeadWarsCommand {
                                                         context.getSource().getSender().sendRichMessage("<green>Do /headwars map global-config itemshops edit <aqua>" + itemShop.id() + " <green>to edit the shop");
 
                                                         return 1;
+
                                                     })
                                                 )
                                             )
                                         )
                                     )
-                                    .then(Commands.literal("edit")
-                                        .then(Commands.argument("id", StringArgumentType.word())
+
+                                    .then(literal("edit")
+                                        .then(argument("id", StringArgumentType.word())
                                             .suggests((context, builder) -> {
-                                                ShopManager.itemShops.keySet().forEach(builder::suggest);
+                                                ItemShop.registeredItemShops.keySet().forEach(builder::suggest);
                                                 return builder.buildFuture();
                                             })
                                             .executes(context -> {
 
-                                                ItemShop itemShop = ShopManager.itemShops.get(context.getArgument("id", String.class));
+                                                ItemShop itemShop = ItemShop.registeredItemShops.get(context.getArgument("id", String.class));
                                                 if (itemShop == null) {
                                                     context.getSource().getSender().sendRichMessage("<red>That shop doesn't exist!");
                                                     return 1;
@@ -567,16 +570,17 @@ public class HeadWarsCommand {
                                                 return 1;
                                             }))
                                     )
-                                    .then(Commands.literal("open")
-                                        .then(Commands.argument("id", StringArgumentType.word())
+
+                                    .then(literal("open")
+                                        .then(argument("id", StringArgumentType.word())
                                             .suggests((context, builder) -> {
-                                                ShopManager.itemShops.keySet().forEach(builder::suggest);
+                                                ItemShop.registeredItemShops.keySet().forEach(builder::suggest);
                                                 return builder.buildFuture();
                                             })
                                             .executes(context -> {
 
                                                 if (!(context.getSource().getSender() instanceof Player player)) return 1;
-                                                ItemShop itemShop = ShopManager.itemShops.get(context.getArgument("id", String.class));
+                                                ItemShop itemShop = ItemShop.registeredItemShops.get(context.getArgument("id", String.class));
                                                 if (itemShop == null) return 1;
                                                 itemShop.openShop(player);
 
@@ -584,109 +588,147 @@ public class HeadWarsCommand {
                                             }))
                                     )
 
-                                    .then(Commands.literal("edit-item")
-                                        .then(Commands.literal("action")
-                                            .then(Commands.literal("buy")
-                                                .then(Commands.argument("price", ArgumentTypes.itemStack())
-                                                    .then(Commands.argument("amount", IntegerArgumentType.integer(1))
-                                                        .executes(context -> {
+                                    .then(literal("edit-item")
+                                        .requires(css -> css.getSender() instanceof Player)
 
-                                                            if (!(context.getSource().getSender() instanceof Player player)) {
-                                                                context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
-                                                                return 1;
-                                                            }
-
-                                                            ItemStack itemToEdit = player.getInventory().getItem(EquipmentSlot.HAND);
-                                                            ItemStack price = context.getArgument("price", ItemStack.class);
-                                                            price.setAmount(context.getArgument("amount", Integer.class));
-
-                                                            ItemStack item = player.getInventory().getItem(EquipmentSlot.OFF_HAND);
-
-                                                            itemToEdit.editPersistentDataContainer(pdc -> {
-                                                                pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
-                                                                pdc.set(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY, price.serializeAsBytes());
-                                                                pdc.set(new NamespacedKey("headwars", "shopitem"), PersistentDataType.BYTE_ARRAY, item.serializeAsBytes());
-                                                            });
-
-                                                            return 1;
-                                                        })
-                                                        .then(Commands.argument("item-id", StringArgumentType.word())
-                                                            .executes(context -> {
-
-                                                                if (!(context.getSource().getSender() instanceof Player player)) {
-                                                                    context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
-                                                                    return 1;
-                                                                }
-
-                                                                ItemStack itemToEdit = player.getInventory().getItem(EquipmentSlot.HAND);
-                                                                ItemStack price = context.getArgument("price", ItemStack.class);
-                                                                price.setAmount(context.getArgument("amount", Integer.class));
-
-
-                                                                itemToEdit.editPersistentDataContainer(pdc -> {
-                                                                    pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
-                                                                    pdc.set(new NamespacedKey("headwars", "shopprice"), PersistentDataType.BYTE_ARRAY, price.serializeAsBytes());
-                                                                    pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, context.getArgument("item-id", String.class));
-                                                                });
-
-                                                                return 1;
-                                                            })
-                                                        )
-                                                    )
-                                                )
-                                            )
-                                            .then(Commands.literal("open-menu")
-                                                .then(Commands.argument("menu", StringArgumentType.word())
-                                                    .executes(context -> {
-
-                                                        if (!(context.getSource().getSender() instanceof Player player)) {
-                                                            context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
-                                                            return 1;
-                                                        }
-
-                                                        ItemStack item = player.getInventory().getItem(EquipmentSlot.HAND);
-
-                                                        item.editPersistentDataContainer(pdc -> {
-                                                            pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "open-menu");
-                                                            pdc.set(new NamespacedKey("headwars", "menu"), PersistentDataType.STRING, context.getArgument("menu", String.class));
-                                                        });
-
-                                                        return 1;
-                                                    })
-                                                )
-                                            )
-                                        )
-
-                                        .then(Commands.literal("custom-id")
-                                            .then(Commands.argument("id", StringArgumentType.word())
+                                        .then(literal("action")
+                                            .then(literal("buy")
                                                 .executes(context -> {
 
-                                                    if (!(context.getSource().getSender() instanceof Player player)) return 1;
-
-                                                    player.getInventory().getItemInMainHand().editPersistentDataContainer(pdc ->
-                                                        pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, context.getArgument("id", String.class)));
-
-                                                    player.sendRichMessage("<green>Custom item id set");
+                                                    Player player = (Player) context.getSource().getSender();
+                                                    ItemStack item = player.getInventory().getItemInMainHand();
+                                                    ShopGui.setItemAction(item, "buy");
 
                                                     return 1;
-
                                                 })
                                             )
+                                            .then(literal("open-menu")
+                                                .then(argument("menu", StringArgumentType.word())
+                                                    .executes(context -> {
+
+                                                        Player player = (Player) context.getSource().getSender();
+                                                        ItemStack item = player.getInventory().getItemInMainHand();
+                                                        ShopGui.setItemAction(item, "open-menu");
+
+                                                        return 1;
+                                                    }))
+                                            )
+
                                         )
+
+                                        .then(literal("price")
+                                            .then(literal("add")
+                                                .then(literal("offhand")
+                                                    .executes(context -> {
+
+                                                        Player player = (Player) context.getSource().getSender();
+                                                        ItemStack item = player.getInventory().getItemInMainHand();
+                                                        ItemStack offhand = player.getInventory().getItemInOffHand();
+
+                                                        HashMap<ItemStack, Integer> price = ShopGui.getItemPrice(item);
+                                                        price.put(offhand, offhand.getAmount());
+                                                        ShopGui.setItemPrice(item, price);
+
+                                                        return 1;
+                                                    }))
+                                                .then(argument("item", ArgumentTypes.itemStack())
+                                                    .then(argument("amount", IntegerArgumentType.integer(0))
+                                                        .executes(context -> {
+
+                                                            Player player = (Player) context.getSource().getSender();
+                                                            ItemStack item = player.getInventory().getItemInMainHand();
+
+                                                            HashMap<ItemStack, Integer> price = ShopGui.getItemPrice(item);
+                                                            price.put(
+                                                                context.getArgument("item", ItemStack.class),
+                                                                IntegerArgumentType.getInteger(context, "amount")
+                                                            );
+                                                            ShopGui.setItemPrice(item, price);
+
+                                                           return 1;
+                                                        })))
+                                            )
+
+                                        )
+
+                                        .then(literal("bought-item")
+                                            .then(literal("offhand")
+                                                .executes(context -> {
+
+                                                    Player player = (Player) context.getSource().getSender();
+                                                    ItemStack item = player.getInventory().getItemInMainHand();
+                                                    ItemStack offhand = player.getInventory().getItemInOffHand();
+
+                                                    ShopGui.setItemBought(item, offhand);
+
+                                                    return 1;
+                                                }))
+                                            .then(argument("item", ArgumentTypes.itemStack())
+                                                .executes(context -> {
+
+                                                    Player player = (Player) context.getSource().getSender();
+                                                    ItemStack item = player.getInventory().getItemInMainHand();
+
+                                                    ShopGui.setItemBought(item, context.getArgument("item", ItemStack.class));
+
+                                                    return 1;
+                                                }))
+                                        )
+
+                                        .then(literal("item-id")
+                                            .then(argument("id", StringArgumentType.word())
+                                                .executes(context -> {
+
+                                                    Player player = (Player) context.getSource().getSender();
+                                                    ItemStack item = player.getInventory().getItemInMainHand();
+
+                                                    ShopGui.setItemId(item, StringArgumentType.getString(context, "id"));
+
+                                                    return 1;
+                                                }))
+                                        )
+
+                                        .then(literal("opened-menu")
+                                            .then(argument("menu", StringArgumentType.word())
+                                                .executes(context -> {
+
+                                                    Player player = (Player) context.getSource().getSender();
+                                                    ItemStack item = player.getInventory().getItemInMainHand();
+
+                                                    ShopGui.setItemMenu(item, StringArgumentType.getString(context, "menu"));
+
+                                                    return 1;
+                                                }))
+                                        )
+
+                                        .then(literal("add-price-lore")
+                                            .executes(context -> {
+
+                                                Player player = (Player) context.getSource().getSender();
+                                                ItemStack item = player.getInventory().getItemInMainHand();
+
+                                                HashMap<ItemStack, Integer> price = ShopGui.getItemPrice(item);
+
+                                                ArrayList<Component> lore = new ArrayList<>();
+                                                price.forEach((priceItem, priceAmount) -> lore.add(Util.getItemCostComponent(priceItem, priceAmount)));
+                                                item.setData(DataComponentTypes.LORE, ItemLore.lore(lore));
+
+                                                return 1;
+                                            }))
 
                                     )
 
                                 )
 
-                                .then(Commands.literal("generators")
+                                .then(literal("generators")
 
-                                    .then(Commands.literal("create")
+                                    .then(literal("create")
 
-                                        .then(Commands.argument("id", StringArgumentType.word())
-                                            .then(Commands.argument("name", StringArgumentType.string())
-                                                .then(Commands.argument("carpet-material", ArgumentTypes.blockState())
-                                                    .then(Commands.argument("upgradeable-by-players", BoolArgumentType.bool())
-                                                        .then(Commands.argument("item-limit", IntegerArgumentType.integer(1))
+                                        .then(argument("id", StringArgumentType.word())
+                                            .then(argument("name", StringArgumentType.string())
+                                                .then(argument("carpet-material", ArgumentTypes.blockState())
+                                                    .then(argument("upgradeable-by-players", BoolArgumentType.bool())
+                                                        .then(argument("item-limit", IntegerArgumentType.integer(1))
                                                             .executes(context -> {
 
                                                                 GeneratorType generatorType = new GeneratorType(
@@ -709,19 +751,19 @@ public class HeadWarsCommand {
                                                             }))))))
                                     )
 
-                                    .then(Commands.literal("edit")
+                                    .then(literal("edit")
 
-                                        .then(Commands.argument("generator", StringArgumentType.word())
+                                        .then(argument("generator", StringArgumentType.word())
                                             .suggests((context, builder) -> {
                                                 GeneratorType.registeredTypes.keySet().forEach(builder::suggest);
                                                 return builder.buildFuture();
                                             })
 
-                                            .then(Commands.literal("set-tier")
-                                                .then(Commands.argument("tier", IntegerArgumentType.integer(0))
-                                                    .then(Commands.argument("speed", IntegerArgumentType.integer(1))
-                                                        .then(Commands.argument("material", ArgumentTypes.blockState())
-                                                            .then(Commands.argument("upgrade-message", StringArgumentType.string())
+                                            .then(literal("set-tier")
+                                                .then(argument("tier", IntegerArgumentType.integer(0))
+                                                    .then(argument("speed", IntegerArgumentType.integer(1))
+                                                        .then(argument("material", ArgumentTypes.blockState())
+                                                            .then(argument("upgrade-message", StringArgumentType.string())
                                                                 .executes(context -> {
 
                                                                     GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
@@ -762,8 +804,8 @@ public class HeadWarsCommand {
 
                                                                 })
 
-                                                                .then(Commands.argument("upgrade-cost", ArgumentTypes.itemStack())
-                                                                    .then(Commands.argument("upgrade-cost-amount", IntegerArgumentType.integer(1))
+                                                                .then(argument("upgrade-cost", ArgumentTypes.itemStack())
+                                                                    .then(argument("upgrade-cost-amount", IntegerArgumentType.integer(1))
                                                                         .executes(context -> {
 
                                                                             GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
@@ -799,9 +841,9 @@ public class HeadWarsCommand {
                                                             ))))
                                             )
 
-                                            .then(Commands.literal("set-generated-resource")
+                                            .then(literal("set-generated-resource")
 
-                                                .then(Commands.literal("hand")
+                                                .then(literal("hand")
                                                     .requires(commandSourceStack -> commandSourceStack.getSender() instanceof Player)
                                                     .executes(context -> {
 
@@ -826,8 +868,8 @@ public class HeadWarsCommand {
                                                         return 1;
                                                     }))
 
-                                                .then(Commands.argument("item", ArgumentTypes.itemStack())
-                                                    .then(Commands.argument("count", IntegerArgumentType.integer(1))
+                                                .then(argument("item", ArgumentTypes.itemStack())
+                                                    .then(argument("count", IntegerArgumentType.integer(1))
                                                         .executes(context -> {
 
                                                             GeneratorType type = GeneratorType.registeredTypes.get(StringArgumentType.getString(context, "generator"));
@@ -854,7 +896,7 @@ public class HeadWarsCommand {
                                         )
                                     )
 
-                                    .then(Commands.literal("reload")
+                                    .then(literal("reload")
                                         .executes(context -> {
 
                                             GeneratorType.reloadGeneratorTypes();
@@ -863,9 +905,9 @@ public class HeadWarsCommand {
 
                                         }))
 
-                                    .then(Commands.literal("set-item-gen")
+                                    .then(literal("set-item-gen")
                                         .requires(commandSourceStack -> commandSourceStack.getSender() instanceof Player)
-                                        .then(Commands.argument("generator-id", StringArgumentType.word())
+                                        .then(argument("generator-id", StringArgumentType.word())
                                             .executes(context -> {
 
                                                 Player player = (Player) context.getSource().getSender();
@@ -881,8 +923,8 @@ public class HeadWarsCommand {
 
                             )
 
-                            .then(Commands.literal("teleport-to-world")
-                                .then(Commands.argument("teleportMapWorld", StringArgumentType.word())
+                            .then(literal("teleport-to-world")
+                                .then(argument("teleportMapWorld", StringArgumentType.word())
                                     .executes(context -> {
 
                                         World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(context.getArgument("teleportMapWorld", String.class)));
@@ -898,10 +940,10 @@ public class HeadWarsCommand {
 
                         )
 
-                        .then(Commands.literal("game")
+                        .then(literal("game")
 
-                            .then(Commands.literal("start")
-                                .then(Commands.argument("map", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
+                            .then(literal("start")
+                                .then(argument("map", StringArgumentType.word()).suggests(HeadWarsCommand::headWarsMapSuggestion)
                                     .executes(context -> {
 
                                         HeadWarsMap map = HeadWarsMapManager.getMap(context.getArgument("map", String.class));
@@ -917,8 +959,8 @@ public class HeadWarsCommand {
                                     })
                                 )
                             )
-                            .then(Commands.literal("join")
-                                .then(Commands.argument("game", StringArgumentType.word())
+                            .then(literal("join")
+                                .then(argument("game", StringArgumentType.word())
                                     .suggests((context, builder) -> {
                                         HeadWarsGameManager.activeGameNames.keySet().forEach(builder::suggest);
                                         return builder.buildFuture();

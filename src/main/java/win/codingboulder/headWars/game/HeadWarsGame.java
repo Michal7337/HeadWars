@@ -38,7 +38,6 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.shop.ItemShop;
-import win.codingboulder.headWars.game.shop.ShopManager;
 import win.codingboulder.headWars.maps.HeadWarsMap;
 import win.codingboulder.headWars.maps.HeadWarsTeam;
 import win.codingboulder.headWars.util.Pair;
@@ -681,7 +680,7 @@ public class HeadWarsGame implements Listener {
 
         event.setCancelled(true);
 
-        ItemShop shop = ShopManager.itemShops.get(map.itemShops().get(entity.getUniqueId()));
+        ItemShop shop = ItemShop.registeredItemShops.get(map.itemShops().get(entity.getUniqueId()));
         if (shop == null) return;
         shop.openShop(event.getPlayer());
 

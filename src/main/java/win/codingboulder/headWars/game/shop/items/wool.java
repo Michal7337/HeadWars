@@ -1,22 +1,47 @@
 package win.codingboulder.headWars.game.shop.items;
 
+import io.papermc.paper.datacomponent.DataComponentTypes;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.shop.CustomShopItem;
+import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.util.Util;
 
-import java.util.List;
-
+@SuppressWarnings("UnstableApiUsage")
 public class wool implements CustomShopItem {
 
+    @Override
+    public ItemStack handleRender(@NotNull ItemStack shopItem, Player player, HeadWarsGame game, ShopGui shop) {
+
+        if (game != null) {
+
+            Component name = Component.text("Wool", Util.getNamedColor(game.playerTeams().get(player).mapTeam().getTeamColor()));
+            ItemStack newItem = shopItem.withType(Util.getWoolFromColor(game.playerTeams().get(player).mapTeam().getTeamColor()));
+            newItem.setData(DataComponentTypes.ITEM_NAME, name);
+
+            return newItem;
+
+        } else return shopItem.withType(Material.WHITE_WOOL);
+
+    }
+
+    @Override
+    public ItemStack handleBuy(@NotNull ItemStack shopItem, Player player, HeadWarsGame game, ShopGui shop) {
+
+        if (game != null) {
+
+         return ItemStack.of(Util.getWoolFromColor(game.playerTeams().get(player).mapTeam().getTeamColor()), shopItem.getAmount());
+
+        } else return ItemStack.of(Material.WHITE_WOOL, shopItem.getAmount());
+
+    }
+
+
+    /*
     public ItemStack handleRender(@NotNull ItemStack shopItem, Player player, HeadWarsGame game) {
 
         ItemStack itemStack = shopItem.withType(Material.WHITE_WOOL);
@@ -60,5 +85,6 @@ public class wool implements CustomShopItem {
         return ItemStack.of(woolColor, 16);
 
     }
+     */
 
 }

@@ -9,8 +9,12 @@ import win.codingboulder.headWars.HeadWars;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Objects;
 
 public class ItemShop implements Serializable {
+
+    public static HashMap<String, ItemShop> registeredItemShops = new HashMap<>();
 
     private String id;
     private String title;
@@ -94,13 +98,43 @@ public class ItemShop implements Serializable {
 
     }
 
+    public static void loadAllShops() {
+
+        if (HeadWars.getShopsFolder().listFiles() == null) return;
+        registeredItemShops = new HashMap<>();
+        for (File file : Objects.requireNonNull(HeadWars.getShopsFolder().listFiles())) {
+
+            ItemShop itemShop = ItemShop.readFromFile(file);
+            if (itemShop == null) continue;
+            registeredItemShops.put(itemShop.id(), itemShop);
+
+        }
+
+    }
+
+    public static @NotNull ItemShop createShop(String id, String name, int rows) {
+
+        if (rows < 1) rows = 1;
+        if (rows > 6) rows = 6;
+        ItemShop itemShop = new ItemShop(id, name, rows);
+
+        ItemStack[] itemsArr = new ItemStack[rows*9];
+        Arrays.fill(itemsArr, null);
+        itemShop.setItems(new ArrayList<>(Arrays.asList(itemsArr)));
+
+        itemShop.storeToFile();
+        loadAllShops();
+        return itemShop;
+
+    }
+
     public void openConfigGui(@NotNull Player player) {
 
         player.openInventory(new ShopConfigGUI(this).getInventory());
 
     }
 
-    public void openShop(@NotNull Player player) { // add a HeadWarsGame here for handling game context
+    public void openShop(@NotNull Player player) {
 
         player.openInventory(new ShopGui(this, player).getInventory());
 
@@ -130,11 +164,11 @@ public class ItemShop implements Serializable {
         this.rows = rows;
     }
 
-    public ArrayList<ItemStack> items() {
+    public ArrayList<ItemStack> getItems() {
         return items;
     }
 
-    public void items(ArrayList<ItemStack> items) {
+    public void setItems(ArrayList<ItemStack> items) {
         this.items = items;
     }
 

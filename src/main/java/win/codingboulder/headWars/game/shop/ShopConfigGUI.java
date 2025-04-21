@@ -15,24 +15,17 @@ import java.util.Arrays;
 
 public class ShopConfigGUI implements InventoryHolder, Listener {
 
-    private final Inventory inventory;
+    private Inventory inventory;
     private final ItemShop itemShop;
 
-    public ShopConfigGUI(@NotNull ItemShop itemShop) {
+    public ShopConfigGUI(ItemShop itemShop) {
 
         this.itemShop = itemShop;
+        if (itemShop == null) return;
 
         inventory = HeadWars.getInstance().getServer().createInventory(this, itemShop.rows()*9, MiniMessage.miniMessage().deserialize(itemShop.title()));
-        inventory.setContents(itemShop.items().toArray(new ItemStack[0]));
+        inventory.setContents(itemShop.getItems().toArray(new ItemStack[0]));
 
-    }
-
-    /**
-     * Empty constructor FOR REGISTERING EVENTS ONLY, DO NOT USE!
-     */
-    public ShopConfigGUI() {
-        inventory = null;
-        itemShop = null;
     }
 
     public @NotNull Inventory getInventory() {
@@ -45,9 +38,9 @@ public class ShopConfigGUI implements InventoryHolder, Listener {
         Inventory inventory = event.getInventory();
         if (!(inventory.getHolder() instanceof ShopConfigGUI gui)) return;
 
-        gui.itemShop.items(new ArrayList<>(Arrays.asList(inventory.getContents())));
+        gui.itemShop.setItems(new ArrayList<>(Arrays.asList(inventory.getContents())));
         gui.itemShop.storeToFile();
-        ShopManager.loadAllShops();
+        ItemShop.loadAllShops();
         event.getPlayer().sendRichMessage("<green>Saved shop inventory!");
 
     }
