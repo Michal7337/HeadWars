@@ -47,3 +47,7 @@ processResources {
         expand props
     }
 }
+
+jar {
+    setDestinationDirectory(new File("/home/mgrze/Desktop/DevTestServer/plugins/"))
+}

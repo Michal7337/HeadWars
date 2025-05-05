@@ -15,13 +15,14 @@ import win.codingboulder.headWars.game.shop.ShopGui;
 import win.codingboulder.headWars.util.Util;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public class tool_pickaxe implements CustomShopItem {
 
     public static ItemStack basePickaxe = ItemStack.of(Material.WOODEN_PICKAXE);
-    public static HashMap<Material, HashMap<ItemStack, Integer>> pickaxeCosts = new HashMap<>();
+    public static LinkedHashMap<Material, HashMap<ItemStack, Integer>> pickaxeCosts = new LinkedHashMap<>();
     static {
 
         pickaxeCosts.put(Material.WOODEN_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.IRON_INGOT, 32)));
@@ -77,6 +78,7 @@ public class tool_pickaxe implements CustomShopItem {
         boughtPickaxe = basePickaxe.withType(nextPickaxe);
 
         if (playerPickaxe == null) player.give(boughtPickaxe);
+        else if (playerPickaxe == pickaxeCosts.keySet().stream().toList().getLast()) player.give(boughtPickaxe);
         else inventory.setItem(inventory.first(playerPickaxe), boughtPickaxe);
 
         shop.reRenderItem(shopItem);
