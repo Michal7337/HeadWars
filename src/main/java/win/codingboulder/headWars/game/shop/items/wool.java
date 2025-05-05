@@ -19,8 +19,8 @@ public class wool implements CustomShopItem {
 
         if (game != null) {
 
-            Component name = Component.text("Wool", Util.getNamedColor(game.playerTeams().get(player).mapTeam().getTeamColor()));
-            ItemStack newItem = shopItem.withType(Util.getWoolFromColor(game.playerTeams().get(player).mapTeam().getTeamColor()));
+            Component name = Component.text("Wool", Util.getNamedColor(game.getPlayerColor(player)));
+            ItemStack newItem = shopItem.withType(Util.getWoolFromColor(game.getPlayerColor(player)));
             newItem.setData(DataComponentTypes.ITEM_NAME, name);
 
             return newItem;
@@ -34,7 +34,7 @@ public class wool implements CustomShopItem {
 
         if (game != null) {
 
-         return ItemStack.of(Util.getWoolFromColor(game.playerTeams().get(player).mapTeam().getTeamColor()), shopItem.getAmount());
+         return ItemStack.of(Util.getWoolFromColor(game.getPlayerColor(player)), shopItem.getAmount());
 
         } else return ItemStack.of(Material.WHITE_WOOL, shopItem.getAmount());
 

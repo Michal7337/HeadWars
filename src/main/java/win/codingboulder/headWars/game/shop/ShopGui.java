@@ -12,6 +12,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.HeadWarsGame;
@@ -355,6 +356,11 @@ public class ShopGui implements InventoryHolder, Listener {
 
         return items;
 
+    }
+
+    public static @NotNull HashMap<ItemStack, Integer> getSingleItemCost(ItemStack cost) {
+        if (cost == null || cost.isEmpty()) return new HashMap<>();
+        return new HashMap<>(Map.of(cost.asOne(), cost.getAmount()));
     }
 
 }

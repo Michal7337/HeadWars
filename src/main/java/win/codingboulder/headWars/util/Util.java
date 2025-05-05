@@ -14,8 +14,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Base64;
-import java.util.Comparator;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class Util {
@@ -102,6 +101,14 @@ public class Util {
         }
 
         return component;
+
+    }
+
+    public static @NotNull List<Component> getItemCostLore(@NotNull HashMap<ItemStack, Integer> cost) {
+
+        ArrayList<Component> lore = new ArrayList<>();
+        for (Map.Entry<ItemStack, Integer> costEntry : cost.entrySet()) lore.add(getItemCostComponent(costEntry.getKey(), costEntry.getValue()));
+        return lore;
 
     }
 

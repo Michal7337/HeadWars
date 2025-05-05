@@ -2,139 +2,98 @@ package win.codingboulder.headWars.game.shop.items;
 
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemAttributeModifiers;
+import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.datacomponent.item.Unbreakable;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.inventory.PlayerInventory;
 import org.jetbrains.annotations.NotNull;
-import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.HeadWarsGame;
 import win.codingboulder.headWars.game.shop.CustomShopItem;
 import win.codingboulder.headWars.game.shop.ShopGui;
+import win.codingboulder.headWars.util.Util;
 
+import java.util.HashMap;
 import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public class tool_pickaxe implements CustomShopItem {
 
-    public ItemStack handleRender(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game) {
+    public static ItemStack basePickaxe = ItemStack.of(Material.WOODEN_PICKAXE);
+    public static HashMap<Material, HashMap<ItemStack, Integer>> pickaxeCosts = new HashMap<>();
+    static {
 
-        ItemStack item = ItemStack.of(Material.WOODEN_PICKAXE);
-        item.editPersistentDataContainer(pdc -> {
-            pdc.set(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING, "tool_pickaxe");
-            pdc.set(new NamespacedKey("headwars", "shopaction"), PersistentDataType.STRING, "buy");
-        });
-        item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).build());
+        pickaxeCosts.put(Material.WOODEN_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.IRON_INGOT, 32)));
+        pickaxeCosts.put(Material.STONE_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.GOLD_INGOT, 64)));
+        pickaxeCosts.put(Material.IRON_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.GOLD_INGOT, 32)));
+        pickaxeCosts.put(Material.DIAMOND_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.DIAMOND, 32)));
 
-        if (player.getInventory().contains(Material.WOODEN_PICKAXE)) {
-
-            item = item.withType(Material.STONE_PICKAXE);
-            item.lore(List.of(
-                Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text("48 Iron", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
-            ));
-
-            item.editPersistentDataContainer(pdc -> pdc.set(
-                new NamespacedKey("headwars", "shopprice"),
-                PersistentDataType.BYTE_ARRAY, ItemStack.of(Material.IRON_INGOT, 48).serializeAsBytes())
-            );
-
-        } else if (player.getInventory().contains(Material.STONE_PICKAXE)) {
-
-            item = item.withType(Material.IRON_PICKAXE);
-            item.lore(List.of(
-                Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text("32 Gold", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false))
-            ));
-
-            item.editPersistentDataContainer(pdc -> pdc.set(
-                new NamespacedKey("headwars", "shopprice"),
-                PersistentDataType.BYTE_ARRAY, ItemStack.of(Material.GOLD_INGOT, 32).serializeAsBytes())
-            );
-
-        } else if (player.getInventory().contains(Material.IRON_PICKAXE)) {
-
-            item = item.withType(Material.DIAMOND_PICKAXE);
-            item.lore(List.of(
-                Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text("24 Diamond", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false))
-            ));
-
-            item.editPersistentDataContainer(pdc -> pdc.set(
-                new NamespacedKey("headwars", "shopprice"),
-                PersistentDataType.BYTE_ARRAY, ItemStack.of(Material.DIAMOND, 24).serializeAsBytes())
-            );
-
-        } else {
-
-            item.lore(List.of(
-                Component.text("Cost: ", NamedTextColor.GRAY).decoration(TextDecoration.ITALIC, false)
-                    .append(Component.text("24 Iron", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false))
-            ));
-            item.editPersistentDataContainer(pdc -> pdc.set(
-                new NamespacedKey("headwars", "shopprice"),
-                PersistentDataType.BYTE_ARRAY, ItemStack.of(Material.IRON_INGOT, 24).serializeAsBytes())
-            );
-
-        }
-
-        return item;
+        basePickaxe.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false).build());
+        basePickaxe.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
 
     }
 
-    public ItemStack handleBuy(@NotNull ItemStack shopItem, @NotNull Player player, Inventory inventory, HeadWarsGame game) {
+    @Override
+    public ItemStack handleRender(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game, ShopGui shop) {
 
-        if (player.getInventory().contains(Material.WOODEN_PICKAXE)) {
+        PlayerInventory inventory = player.getInventory();
+        ItemStack renderedPickaxe;
+        Material playerPickaxe = null;
 
-            for (int i = 0; i < player.getInventory().getContents().length; i++) {
-                ItemStack item = player.getInventory().getContents()[i];
-                if (item != null && item.getType().equals(Material.WOODEN_PICKAXE)) {
-                    player.getInventory().setItem(i, item.withType(Material.STONE_PICKAXE));
-                    break;
-                }
-            }
+        //determine what pickaxe the player has
+        for (Material material : pickaxeCosts.keySet()) if (inventory.contains(material)) playerPickaxe = material;
 
-        } else if (player.getInventory().contains(Material.STONE_PICKAXE)) {
+        Material nextPickaxe = getNextTier(playerPickaxe);
+        if (nextPickaxe == null) nextPickaxe = pickaxeCosts.keySet().stream().toList().getLast(); // if the player has the max pickaxe set to the max pickaxe
 
-            for (int i = 0; i < player.getInventory().getContents().length; i++) {
-                ItemStack item = player.getInventory().getContents()[i];
-                if (item != null && item.getType().equals(Material.STONE_PICKAXE)) {
-                    player.getInventory().setItem(i, item.withType(Material.IRON_PICKAXE));
-                    break;
-                }
-            }
+        renderedPickaxe = basePickaxe.withType(nextPickaxe);
 
-        } else if (player.getInventory().contains(Material.IRON_PICKAXE)) {
+        HashMap<ItemStack, Integer> cost = pickaxeCosts.get(nextPickaxe);
 
-            for (int i = 0; i < player.getInventory().getContents().length; i++) {
-                ItemStack item = player.getInventory().getContents()[i];
-                if (item != null && item.getType().equals(Material.IRON_PICKAXE)) {
-                    player.getInventory().setItem(i, item.withType(Material.DIAMOND_PICKAXE));
-                    break;
-                }
-            }
+        renderedPickaxe.setData(DataComponentTypes.LORE, ItemLore.lore(Util.getItemCostLore(cost)));
 
-        } else {
+        ShopGui.setItemAction(renderedPickaxe, "buy");
+        ShopGui.setItemId(renderedPickaxe, "tool_pickaxe");
+        ShopGui.setItemPrice(renderedPickaxe, cost);
 
-            ItemStack item = ItemStack.of(Material.WOODEN_PICKAXE);
-            //noinspection UnstableApiUsage
-            item.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
-            Bukkit.getScheduler().runTaskLater(HeadWars.getInstance(), task -> ShopGui.dummyGUI.reRenderItem(shopItem, player, inventory), 1);
-            return item;
+        return renderedPickaxe;
 
-        }
+    }
 
-        ShopGui.dummyGUI.reRenderItem(shopItem, player, inventory);
+    @Override
+    public ItemStack handleBuy(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game, ShopGui shop) {
 
-        return ItemStack.empty();
+        PlayerInventory inventory = player.getInventory();
+        ItemStack boughtPickaxe;
+        Material playerPickaxe = null;
+
+        //determine what pickaxe the player has
+        for (Material material : pickaxeCosts.keySet()) if (inventory.contains(material)) playerPickaxe = material;
+
+        Material nextPickaxe = getNextTier(playerPickaxe);
+        if (nextPickaxe == null) nextPickaxe = pickaxeCosts.keySet().stream().toList().getLast(); // if the player has the max pickaxe, set to the max pickaxe
+
+        boughtPickaxe = basePickaxe.withType(nextPickaxe);
+
+        if (playerPickaxe == null) player.give(boughtPickaxe);
+        else inventory.setItem(inventory.first(playerPickaxe), boughtPickaxe);
+
+        shop.reRenderItem(shopItem);
+
+        return null;
+
+    }
+
+    public Material getNextTier(Material currentTier) {
+
+        List<Material> materials = pickaxeCosts.keySet().stream().toList();
+        int currentIndex = materials.indexOf(currentTier);
+        if (currentIndex == -1) return materials.getFirst(); // if the player has no item
+        if (currentIndex + 1 == pickaxeCosts.size()) return null; // if the player has the max tier
+        return materials.get(currentIndex + 1);
 
     }
 
 }
+

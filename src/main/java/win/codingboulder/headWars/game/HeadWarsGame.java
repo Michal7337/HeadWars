@@ -490,6 +490,10 @@ public class HeadWarsGame implements Listener {
         return false;
     }
 
+    public DyeColor getPlayerColor(Player player) {
+        return playerTeams.get(player).mapTeam().getTeamColor();
+    }
+
     public boolean isStarted() {
         return isStarted;
     }
