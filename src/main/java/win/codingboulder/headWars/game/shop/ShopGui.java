@@ -12,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.game.HeadWarsGame;
@@ -44,10 +43,7 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("wool", new wool());
         customItemHandlers.put("tool_pickaxe", new tool_pickaxe());
 
-        customItemHandlers.put("armor_helmet", new armor_helmet());
-        customItemHandlers.put("armor_chestplate", new armor_chestplate());
         customItemHandlers.put("armor_leggings", new armor_leggings());
-        customItemHandlers.put("armor_boots", new armor_boots());
 
         customItemHandlers.put("sword_stone", new sword(Material.STONE_SWORD));
         customItemHandlers.put("sword_iron", new sword(Material.IRON_SWORD));
@@ -352,7 +348,7 @@ public class ShopGui implements InventoryHolder, Listener {
         ItemStack[] items = new ItemStack[stacks];
 
         Arrays.fill(items, 0, fullStacks, priceItem);
-        items[fullStacks] = item.asQuantity(remainingItems);
+        if (remainingItems > 0) items[fullStacks] = item.asQuantity(remainingItems);
 
         return items;
 

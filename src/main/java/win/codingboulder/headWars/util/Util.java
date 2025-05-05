@@ -93,9 +93,9 @@ public class Util {
 
         switch (cost.getType()) {
 
-            case IRON_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " iron", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false);
-            case GOLD_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " gold", NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false);
-            case DIAMOND -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " diamond", NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC, false);
+            case IRON_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Iron", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false);
+            case GOLD_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Gold", NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false);
+            case DIAMOND -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Diamond", NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC, false);
             default -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " ")).append(cost.displayName()).decoration(TextDecoration.ITALIC, false);
 
         }

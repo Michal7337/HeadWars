@@ -27,7 +27,20 @@ import java.util.List;
 @SuppressWarnings("UnstableApiUsage")
 public class armor_leggings implements CustomShopItem {
 
-    public ItemStack handleRender(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game) {
+
+    @Override
+    public ItemStack handleRender(@NotNull ItemStack shopItem, Player player, HeadWarsGame game, ShopGui shop) {
+        return null;
+    }
+
+    @Override
+    public ItemStack handleBuy(@NotNull ItemStack shopItem, Player player, HeadWarsGame game, ShopGui shop) {
+        return null;
+    }
+}
+
+/*
+public ItemStack handleRender(@NotNull ItemStack shopItem, @NotNull Player player, HeadWarsGame game) {
 
         ItemStack item = ItemStack.of(Material.CHAINMAIL_LEGGINGS);
         item.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
@@ -106,5 +119,4 @@ public class armor_leggings implements CustomShopItem {
 
         return ItemStack.of(Material.AIR);
     }
-
-}
+ */

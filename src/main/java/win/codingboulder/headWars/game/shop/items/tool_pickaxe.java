@@ -25,7 +25,7 @@ public class tool_pickaxe implements CustomShopItem {
     static {
 
         pickaxeCosts.put(Material.WOODEN_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.IRON_INGOT, 32)));
-        pickaxeCosts.put(Material.STONE_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.GOLD_INGOT, 64)));
+        pickaxeCosts.put(Material.STONE_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.IRON_INGOT, 64)));
         pickaxeCosts.put(Material.IRON_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.GOLD_INGOT, 32)));
         pickaxeCosts.put(Material.DIAMOND_PICKAXE, ShopGui.getSingleItemCost(ItemStack.of(Material.DIAMOND, 32)));
 
