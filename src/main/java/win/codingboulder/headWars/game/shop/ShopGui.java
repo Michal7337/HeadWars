@@ -6,10 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.*;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +41,10 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("tool_pickaxe", new tool_pickaxe());
         customItemHandlers.put("sword", new sword());
 
-        customItemHandlers.put("armor_leggings", new armor_leggings());
+        customItemHandlers.put("armor_helmet", new armor(EquipmentSlot.HEAD));
+        customItemHandlers.put("armor_chestplate", new armor(EquipmentSlot.CHEST));
+        customItemHandlers.put("armor_leggings", new armor(EquipmentSlot.LEGS));
+        customItemHandlers.put("armor_boots", new armor(EquipmentSlot.FEET));
 
     }
 
