@@ -110,9 +110,6 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
 
-        String id = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "itemid"), PersistentDataType.STRING);
-        if (id == null) return;
-        if (!id.equals("resource_generator")) return;
         String genId = event.getItemInHand().getPersistentDataContainer().get(new NamespacedKey("headwars", "generator_id"), PersistentDataType.STRING);
         if (genId == null) return;
 

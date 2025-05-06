@@ -572,6 +572,11 @@ public class HeadWarsGame implements Listener {
                 continue;
             }
 
+            if (itemMaterial.equals(Material.SHEARS)) {
+                newInventory[i] = item;
+                continue;
+            }
+
             newInventory[i] = null;
 
         }
@@ -590,7 +595,8 @@ public class HeadWarsGame implements Listener {
 
                 inventory.setContents(newInventory);
                 inventory.setArmorContents(armor);
-                //if (!inventory.containsAtLeast(ResourceGenerator.sword, 1)) player.give(ResourceGenerator.sword);
+
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SATURATION, PotionEffect.INFINITE_DURATION, 1, false, false, false));
 
                 immunePlayers.add(player);
                 Bukkit.getScheduler().runTaskLater(plugin, task2 -> immunePlayers.remove(player), 100);
