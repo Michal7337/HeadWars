@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.DyedItemColor;
 import io.papermc.paper.datacomponent.item.Unbreakable;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.math.BlockPosition;
 import io.papermc.paper.math.FinePosition;
 import io.papermc.paper.math.Position;
@@ -19,6 +20,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -62,6 +64,7 @@ public class HeadWarsGame implements Listener {
     private final ArrayList<GameTeam> teams;
     private final ArrayList<Player> players;
     private Audience allPlayersAudience;
+    private Audience deadPlayersAudience;
     private Scoreboard mainScoreboard;
 
     private final HashMap<Player, GameTeam> playerTeams = new HashMap<>(); // utility map for easily accessing player teams
@@ -96,6 +99,7 @@ public class HeadWarsGame implements Listener {
 
         maxPlayers = teams.size() * map.getPlayersPerTeam();
         allPlayersAudience = Audience.audience(players);
+        deadPlayersAudience = Audience.audience(deadPlayers);
 
     }
 
@@ -144,7 +148,7 @@ public class HeadWarsGame implements Listener {
 
                 objective.getScore("nextEvent").customName(MiniMessage.miniMessage().deserialize("<aqua>" + nextEvent + "<white> in <green>" + nextEventTime / 60 + "m" + nextEventTime % 60 + "s"));
 
-                teams.forEach(gameTeam -> objective.getScore("team-" + gameTeam.mapTeam().getTeamColor()).customName(Component.text("█: ", Util.getNamedColor(gameTeam.mapTeam().getTeamColor())).append(gameTeam.getHeadStatusComponent())));
+                teams.forEach(gameTeam -> objective.getScore("team-" + gameTeam.mapTeam().getTeamColor()).customName(Component.text("█: ", gameTeam.getTeamTextColor()).append(gameTeam.getHeadStatusComponent())));
 
             });
 
@@ -708,7 +712,10 @@ public class HeadWarsGame implements Listener {
 
         Block block = event.getBlock();
         if (block.getWorld() != world) return;
+
         if (isBlockProtected(block)) event.setCancelled(true);
+        if (clickGenerators.containsKey(block.getLocation().toBlock())) event.setCancelled(true);
+        if (isBlockAHead(block)) event.setCancelled(true);
 
         teams.forEach(team -> {
             if (team.unbrokenHeads().contains(block.getLocation().toBlock())) event.setCancelled(true);
@@ -846,6 +853,32 @@ public class HeadWarsGame implements Listener {
 
         disconnectedPlayers.remove(playerUUID);
         disconnectedPlayerObjects.remove(playerUUID);
+
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onPlayerChat(@NotNull AsyncChatEvent event) {
+
+        if (!HeadWars.isGameChatEnabled) return; // if the game chat is disabled don't touch the event
+
+        Player player = event.getPlayer();
+        if (!player.getWorld().equals(world)) return;
+        Component message = event.message();
+
+        if (deadPlayers.contains(player)) {         // if the player is dead send the message as GHOST
+
+            event.setCancelled(true);
+            Component newMessage = Component.text("[GHOST] ", NamedTextColor.GRAY).append(player.displayName().color(NamedTextColor.GRAY)).append(Component.text(": ")).append(message);
+            deadPlayersAudience.sendMessage(newMessage);
+
+        } else if (!deadPlayers.contains(player) && players.contains(player)) { // if the player is in the game (alive)
+
+            event.setCancelled(true);
+            GameTeam team = playerTeams.get(player);
+            Component newMessage = Component.text("[" + team.getTeamName() + "] ", team.getTeamTextColor()).append(player.displayName().color(team.getTeamTextColor())).append(Component.text(": ", NamedTextColor.WHITE)).append(message);
+            allPlayersAudience.sendMessage(newMessage);
+
+        }
 
     }
 

@@ -72,6 +72,7 @@ public final class HeadWars extends JavaPlugin {
 
     public static String gameEndAction;
     public static Location gameEndTpLocation;
+    public static boolean isGameChatEnabled;
 
     public void loadConfig() {
 
@@ -101,6 +102,7 @@ public final class HeadWars extends JavaPlugin {
         gameEndTpLocation = gameEndLocation;
 
         serverName = config.getString("headwars.server-name", "codingboulder.win");
+        isGameChatEnabled = config.getBoolean("headwars.enable-game-chat", true);
 
     }
 

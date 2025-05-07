@@ -3,10 +3,13 @@ headwars:
   # The name of the server, displayed at the bottom of the scoreboard
   server-name: codingboulder.win
 
+  # Specifies if the game exclusive chat should be enabled. Disable this if it breaks any chat plugins, but this will mean the messages of players in games will be visible server-wide.
+  enable-game-chat: true
+
   # Specifies what happens to players after a game ends
   game-end:
     # The action to do. The possible values are:
-    # teleport - teleports the players to the specified world and location. If the world doesn't exist, the players are kicked. Note that the world will be loaded on startup.
+    # teleport - teleports the players to the specified world and location. If the world doesn't exist, it will be created. Note that the world will be loaded on startup.
     # kick - kicks the players from the server. The location value is ignored
     action: teleport
     location:
