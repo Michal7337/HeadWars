@@ -25,7 +25,7 @@ public final class HeadWars extends JavaPlugin {
     private static File shopsFolder;
     private static File generatorsFolder;
 
-    public static String serverName = "codingboulder.win";
+    public static String serverName;
 
     @Override
     public void onEnable() {
@@ -99,6 +99,8 @@ public final class HeadWars extends JavaPlugin {
 
         HeadWars.gameEndAction = gameEndAction;
         gameEndTpLocation = gameEndLocation;
+
+        serverName = config.getString("headwars.server-name", "codingboulder.win");
 
     }
 

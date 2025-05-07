@@ -1,5 +1,8 @@
 headwars:
 
+  # The name of the server, displayed at the bottom of the scoreboard
+  server-name: codingboulder.win
+
   # Specifies what happens to players after a game ends
   game-end:
     # The action to do. The possible values are:
