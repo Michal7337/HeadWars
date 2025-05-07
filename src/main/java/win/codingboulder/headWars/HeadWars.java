@@ -1,5 +1,10 @@
 package win.codingboulder.headWars;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.WorldCreator;
+import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import win.codingboulder.headWars.game.GeneratorType;
 import win.codingboulder.headWars.game.HeadWarsGame;
@@ -39,6 +44,8 @@ public final class HeadWars extends JavaPlugin {
         ItemShop.loadAllShops();
         GeneratorType.reloadGeneratorTypes();
 
+        loadConfig();
+
     }
 
     @Override
@@ -60,6 +67,38 @@ public final class HeadWars extends JavaPlugin {
 
         generatorsFolder = new File(getDataFolder(), "generators");
         if (generatorsFolder.mkdir()) getLogger().info("Created generators folder");
+
+    }
+
+    public static String gameEndAction;
+    public static Location gameEndTpLocation;
+
+    public void loadConfig() {
+
+        saveDefaultConfig();
+        FileConfiguration config = getConfig();
+
+        String gameEndAction = config.getString("headwars.game-end.action", "kick");
+        String gameEndTpWorld = config.getString("headwars.game-end.location.world", "world");
+        int gameEndTpX = config.getInt("headwars.game-end.location.x", 0);
+        int gameEndTpY = config.getInt("headwars.game-end.location.x", 100);
+        int gameEndTpZ = config.getInt("headwars.game-end.location.x", 0);
+        Location gameEndLocation;
+
+        if (gameEndAction.equals("teleport")) {
+
+            World gameEndWorld = Bukkit.createWorld(WorldCreator.name(gameEndTpWorld));
+            gameEndLocation = new Location(gameEndWorld, gameEndTpX, gameEndTpY, gameEndTpZ);
+
+        } else {
+
+            gameEndAction = "kick";
+            gameEndLocation = null;
+
+        }
+
+        HeadWars.gameEndAction = gameEndAction;
+        gameEndTpLocation = gameEndLocation;
 
     }
 

@@ -1,0 +1,13 @@
+headwars:
+
+  # Specifies what happens to players after a game ends
+  game-end:
+    # The action to do. The possible values are:
+    # teleport - teleports the players to the specified world and location. If the world doesn't exist, the players are kicked. Note that the world will be loaded on startup.
+    # kick - kicks the players from the server. The location value is ignored
+    action: teleport
+    location:
+      world: world
+      x: 0
+      y: 100
+      z: 0

@@ -390,7 +390,9 @@ public class HeadWarsGame implements Listener {
     public void handleGameStop() {
 
         players.forEach(HeadWarsGameManager.playersInGames::remove);
-        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
+
+        if (HeadWars.gameEndAction.equals("teleport")) players.forEach(player -> player.teleport(HeadWars.gameEndTpLocation));
+        else players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped")));
 
         runEveryTickTask.cancel();
         runEverySecondTask.cancel();
@@ -408,7 +410,7 @@ public class HeadWarsGame implements Listener {
 
     public void handleForceStop() {
 
-        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped and a lobby hasn't been configured")));
+        players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has been force stopped.")));
 
         Bukkit.unloadWorld(world, false);
         try { Util.deleteDirectory(worldFile); } catch (IOException e) {plugin.getLogger().warning("An error occurred while deleting game world!");}
