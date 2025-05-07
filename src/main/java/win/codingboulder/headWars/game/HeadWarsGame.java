@@ -397,6 +397,11 @@ public class HeadWarsGame implements Listener {
         runEveryTickTask.cancel();
         runEverySecondTask.cancel();
 
+        playerScoreboards.forEach((player, scoreboard) -> {
+            scoreboard.clearSlot(DisplaySlot.SIDEBAR);
+            player.setScoreboard(Bukkit.getScoreboardManager().getNewScoreboard());
+        });
+
         HandlerList.unregisterAll(this);
 
         Bukkit.unloadWorld(world, false);
