@@ -2,6 +2,7 @@ package win.codingboulder.headWars.maps;
 
 import com.google.gson.GsonBuilder;
 import org.bukkit.DyeColor;
+import org.jetbrains.annotations.NotNull;
 import win.codingboulder.headWars.HeadWars;
 import win.codingboulder.headWars.util.Pair;
 import win.codingboulder.headWars.util.SimpleBlockPos;
@@ -13,6 +14,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class HeadWarsMap {
 
@@ -79,6 +81,11 @@ public class HeadWarsMap {
             throw new RuntimeException(e);
         }
 
+    }
+
+    public void editAndSave(@NotNull Consumer<HeadWarsMap> map) {
+        map.accept(this);
+        updateMapFile();
     }
 
     public String getID() {

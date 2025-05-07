@@ -865,7 +865,7 @@ public class HeadWarsGame implements Listener {
         if (!player.getWorld().equals(world)) return;
         Component message = event.message();
 
-        if (deadPlayers.contains(player)) {         // if the player is dead send the message as GHOST
+        if (deadPlayers.contains(player)) { // if the player is dead send the message as GHOST
 
             event.setCancelled(true);
             Component newMessage = Component.text("[GHOST] ", NamedTextColor.GRAY).append(player.displayName().color(NamedTextColor.GRAY)).append(Component.text(": ")).append(message);
