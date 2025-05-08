@@ -73,6 +73,7 @@ public class HeadWarsGame implements Listener {
     private final ArrayList<GameTeam> liveTeams = new ArrayList<>();
     private final ArrayList<Player> deadPlayers = new ArrayList<>();
 
+    public String gameName = "";
     int maxPlayers;
 
     private boolean isStarted;
@@ -412,7 +413,7 @@ public class HeadWarsGame implements Listener {
         try { Util.deleteDirectory(worldFile); } catch (IOException e) {plugin.getLogger().warning("An error occurred while deleting game world!");}
 
         HeadWarsGameManager.activeGames().remove(this);
-        HeadWarsGameManager.activeGameNames.remove(worldFile.getName());
+        HeadWarsGameManager.activeGameNames.remove(gameName);
         HeadWarsGameManager.worldFolders.remove(worldFile);
 
     }
@@ -519,6 +520,8 @@ public class HeadWarsGame implements Listener {
 
     private final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
     private void handleBlockUpgrade(Block block, Player player) {
+
+        for (GameTeam team : teams) if (isBlockInArea(block, team.mapTeam().getBasePerimeter())) return;
 
         Material blockMat;
         if (Util.isWool(block)) blockMat = Material.WHITE_WOOL; else blockMat = block.getType();
@@ -667,14 +670,15 @@ public class HeadWarsGame implements Listener {
             player.launchProjectile(Fireball.class, player.getLocation().getDirection().multiply(2));
         }
 
-        if (event.getClickedBlock() == null) return;
+        Block block = event.getClickedBlock();
+        if (block == null) return;
         if (event.getAction().isLeftClick()) return;
-        if (!event.getClickedBlock().getWorld().equals(world)) return;
+        if (!block.getWorld().equals(world)) return;
         if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
 
-        if (event.getPlayer().isSneaking() && Objects.equals(event.getHand(), EquipmentSlot.HAND)) handleBlockUpgrade(event.getClickedBlock(), event.getPlayer());
+        if (player.isSneaking() && Objects.equals(event.getHand(), EquipmentSlot.HAND)) handleBlockUpgrade(block, event.getPlayer());
 
-        Location location = event.getClickedBlock().getLocation();
+        Location location = block.getLocation();
 
         //If clicked the button generator
         if (clickGenerators.containsKey(Position.block(location)) && !player.isSneaking()) {
@@ -875,7 +879,7 @@ public class HeadWarsGame implements Listener {
 
             event.setCancelled(true);
             GameTeam team = playerTeams.get(player);
-            Component newMessage = Component.text("[" + team.getTeamName() + "] ", team.getTeamTextColor()).append(player.displayName().color(team.getTeamTextColor())).append(Component.text(": ", NamedTextColor.WHITE)).append(message);
+            Component newMessage = Component.text("[" + team.getTeamName() + "] ", team.getTeamTextColor()).append(player.displayName().color(team.getTeamTextColor())).append(Component.text(": ", NamedTextColor.WHITE).append(message));
             allPlayersAudience.sendMessage(newMessage);
 
         }

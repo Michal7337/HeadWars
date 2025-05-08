@@ -49,7 +49,9 @@ public class HeadWarsGameManager {
 
         HeadWarsGame headWarsGame = new HeadWarsGame(world, map, gameWorld);
         activeGames.add(headWarsGame);
-        activeGameNames.put(map.getID() + "-" + gameCount, headWarsGame);
+        String gameName = map.getID() + "-" + gameCount;
+        activeGameNames.put(gameName, headWarsGame);
+        headWarsGame.gameName = gameName;
 
     }
 

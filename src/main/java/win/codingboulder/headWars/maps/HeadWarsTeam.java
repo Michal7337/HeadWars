@@ -1,6 +1,7 @@
 package win.codingboulder.headWars.maps;
 
 import org.bukkit.DyeColor;
+import win.codingboulder.headWars.util.Pair;
 import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.SimpleFinePos;
 
@@ -50,6 +51,10 @@ public class HeadWarsTeam {
 
     public SimpleBlockPos getBasePerimeterPos2() {
         return basePerimeterPos2;
+    }
+
+    public Pair<SimpleBlockPos, SimpleBlockPos> getBasePerimeter() {
+        return Pair.of(basePerimeterPos1, basePerimeterPos2);
     }
 
     public ArrayList<SimpleBlockPos> heads() {
