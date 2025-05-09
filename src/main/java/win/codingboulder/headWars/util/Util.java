@@ -22,6 +22,7 @@ public class Util {
     public static void copyDirectory(@NotNull File source, @NotNull File destination) throws IOException {
         String sourceDirectoryLocation = source.getAbsolutePath();
         String destinationDirectoryLocation = destination.getAbsolutePath();
+        //noinspection resource
         Files.walk(Paths.get(sourceDirectoryLocation))
             .forEach(sourceI -> {
                 Path destinationI = Paths.get(destinationDirectoryLocation, sourceI.toString()
@@ -87,6 +88,32 @@ public class Util {
 
     }
 
+    public static Component getColoredItemName(@NotNull ItemStack item, int amount) {
+
+        Component component;
+
+        switch (item.getType()) {
+
+            case IRON_INGOT -> component = Component.text(amount + " Iron", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false);
+            case GOLD_INGOT -> component =  Component.text(amount + " Gold", NamedTextColor.GOLD).decoration(TextDecoration.ITALIC, false);
+            case DIAMOND -> component = Component.text(amount + " Diamond", NamedTextColor.AQUA).decoration(TextDecoration.ITALIC, false);
+            case EMERALD -> component = Component.text(amount + (amount == 1 ? " Emerald" : " Emeralds"), NamedTextColor.DARK_GREEN).decoration(TextDecoration.ITALIC, false);
+            default -> component = Component.text(amount + " ").append(item.displayName()).decoration(TextDecoration.ITALIC, false);
+
+        }
+
+        return component;
+
+    }
+
+    public static Component getItemCostLineComponent(@NotNull HashMap<ItemStack, Integer> cost) {
+
+        Component component = Component.empty();
+        for (Map.Entry<ItemStack, Integer> entry : cost.entrySet()) component = component.append(getColoredItemName(entry.getKey(), entry.getValue()));
+        return component;
+
+    }
+
     public static Component getItemCostComponent(@NotNull ItemStack cost, int amount) {
 
         Component component;
@@ -96,6 +123,7 @@ public class Util {
             case IRON_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Iron", NamedTextColor.WHITE)).decoration(TextDecoration.ITALIC, false);
             case GOLD_INGOT -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Gold", NamedTextColor.GOLD)).decoration(TextDecoration.ITALIC, false);
             case DIAMOND -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " Diamond", NamedTextColor.AQUA)).decoration(TextDecoration.ITALIC, false);
+            case EMERALD -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + (amount == 1 ? " Emerald" : " Emeralds"), NamedTextColor.DARK_GREEN)).decoration(TextDecoration.ITALIC, false);
             default -> component = Component.text("Cost: ", NamedTextColor.GRAY).append(Component.text(amount + " ")).append(cost.displayName()).decoration(TextDecoration.ITALIC, false);
 
         }

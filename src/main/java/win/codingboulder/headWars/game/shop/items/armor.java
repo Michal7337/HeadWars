@@ -79,7 +79,7 @@ public class armor implements CustomShopItem {
             return maxTierArmor;
         }
 
-        ItemStack renderedItem = ItemStack.of(upgradeData.key());
+        ItemStack renderedItem = inventory.getItem(armorSlot).withType(upgradeData.key());
 
         ShopGui.setItemAction(renderedItem, "buy");
         ShopGui.setItemId(renderedItem, ShopGui.getItemId(shopItem));
@@ -103,9 +103,7 @@ public class armor implements CustomShopItem {
         upgradeData = armorUpgrades.getOrDefault(invItem, defaultArmor.get(armorSlot));
         if (upgradeData == null) return null;
 
-        ItemStack item = ItemStack.of(upgradeData.key());
-        item.setData(DataComponentTypes.UNBREAKABLE, Unbreakable.unbreakable(false));
-        item.setData(DataComponentTypes.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.itemAttributes().showInTooltip(false));
+        ItemStack item = inventory.getItem(armorSlot).withType(upgradeData.key());
 
         inventory.setItem(armorSlot, item);
 

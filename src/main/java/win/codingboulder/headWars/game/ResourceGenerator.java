@@ -262,12 +262,10 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
     public void onWorldUnload(@NotNull WorldUnloadEvent event) {
 
         World world = event.getWorld();
-        for (Map.Entry<Block, ResourceGenerator> gen : generators.entrySet()) {
-            if (gen.getKey().getWorld().equals(world)) {
-                gen.getValue().cancel();
-                generators.remove(gen.getKey());
-            }
-        }
+        generators.forEach((block, gen) -> {
+            if (block.getWorld().equals(world)) gen.cancel();
+        });
+        generators.keySet().removeIf(block -> block.getWorld().equals(world));
 
     }
 

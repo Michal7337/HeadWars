@@ -46,6 +46,8 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("armor_leggings", new armor(EquipmentSlot.LEGS));
         customItemHandlers.put("armor_boots", new armor(EquipmentSlot.FEET));
 
+        customItemHandlers.put("upgrade_genLimit", new upgrade_genLimit());
+
     }
 
     public ShopGui(ItemShop itemShop, Player player) {

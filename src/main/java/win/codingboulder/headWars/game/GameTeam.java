@@ -12,6 +12,7 @@ import win.codingboulder.headWars.util.SimpleBlockPos;
 import win.codingboulder.headWars.util.Util;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 @SuppressWarnings("UnstableApiUsage")
 public class GameTeam {
@@ -24,6 +25,7 @@ public class GameTeam {
     public int generatorLimit = 10;
 
     private final ArrayList<BlockPosition> unbrokenHeads;
+    public final HashMap<String, Integer> purchasedUpgrades = new HashMap<>();
 
     public GameTeam(@NotNull HeadWarsTeam mapTeam, HeadWarsGame game) {
 
