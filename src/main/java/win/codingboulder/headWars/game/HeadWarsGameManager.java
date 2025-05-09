@@ -24,12 +24,12 @@ public class HeadWarsGameManager {
 
     private static int gameCount = -1;
 
-    public static void startGame(@NotNull HeadWarsMap map) {
+    public static HeadWarsGame startGame(@NotNull HeadWarsMap map) {
 
         gameCount++;
 
         File mapWorld = new File(HeadWars.getInstance().getServer().getWorldContainer(), map.getWorld());
-        if (!mapWorld.exists()) return;
+        if (!mapWorld.exists()) return null;
 
         File gameWorld = new File(HeadWars.getInstance().getServer().getWorldContainer(), "headwars-game-" + gameCount);
 
@@ -44,7 +44,7 @@ public class HeadWarsGameManager {
         World world = HeadWars.getInstance().getServer().createWorld(WorldCreator.name(gameWorld.getName()));
         if (world == null) {
             HeadWars.getInstance().getLogger().warning("Failed to load world for game 'headwars-game-" + gameCount +"'!");
-            return;
+            return null;
         }
 
         HeadWarsGame headWarsGame = new HeadWarsGame(world, map, gameWorld);
@@ -52,6 +52,27 @@ public class HeadWarsGameManager {
         String gameName = map.getID() + "-" + gameCount;
         activeGameNames.put(gameName, headWarsGame);
         headWarsGame.gameName = gameName;
+
+        return headWarsGame;
+
+    }
+
+    public static boolean matchMakePlayer(Player player, HeadWarsMap map) {
+
+        for (HeadWarsGame game : activeGames) {
+
+            if (game.getMap() == map && game.canJoin(player)) {
+                game.addPlayer(player);
+                return true;
+            }
+
+        }
+
+        HeadWarsGame game = startGame(map);
+        if (game != null) game.addPlayer(player);
+        else return false;
+
+        return true;
 
     }
 

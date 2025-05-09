@@ -12,6 +12,7 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.MessageComponentSerializer;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.EntitySelectorArgumentResolver;
+import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
@@ -445,8 +446,8 @@ public class HeadWarsCommand {
                                 }
 
                                 player.sendRichMessage("<gray>Joining game...");
-                                game.addPlayer(player);
-                                player.sendRichMessage("<green>You have joined the game!");
+                                boolean success = game.addPlayer(player);
+                                player.sendRichMessage(success ? "<green>You have joined the game!" : "<red>Failed to join game:");
 
                                 return 1;
 
@@ -474,6 +475,38 @@ public class HeadWarsCommand {
                                 return 1;
 
                             }))
+                    )
+
+                    .then(literal("matchmake")
+                        .then(argument("map", new HeadWarsMapArgument())
+
+                            .then(argument("player", ArgumentTypes.player())
+                                .executes(context -> {
+
+                                    Player player = context.getArgument("player", PlayerSelectorArgumentResolver.class).resolve(context.getSource()).getFirst();
+                                    boolean success = HeadWarsGameManager.matchMakePlayer(player, context.getArgument("map", HeadWarsMap.class));
+                                    player.sendRichMessage(success ? "<green>Joined game!" : "<red>Failed to join game!");
+
+                                    return 1;
+
+                                })
+                            )
+
+                            .executes(context -> {
+
+                                if (!(context.getSource().getSender() instanceof Player player)) {
+                                    context.getSource().getSender().sendRichMessage("<red>You must be a player to execute this!");
+                                    return 1;
+                                }
+
+                                boolean success = HeadWarsGameManager.matchMakePlayer(player, context.getArgument("map", HeadWarsMap.class));
+                                player.sendRichMessage(success ? "<green>Joined game!" : "<red>Failed to join game!");
+
+                                return 1;
+
+                            })
+
+                        )
                     )
 
                     .then(literal("admin")

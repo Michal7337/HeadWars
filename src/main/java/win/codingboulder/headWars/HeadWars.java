@@ -83,8 +83,8 @@ public final class HeadWars extends JavaPlugin {
         String gameEndAction = config.getString("headwars.game-end.action", "kick");
         String gameEndTpWorld = config.getString("headwars.game-end.location.world", "world");
         int gameEndTpX = config.getInt("headwars.game-end.location.x", 0);
-        int gameEndTpY = config.getInt("headwars.game-end.location.x", 100);
-        int gameEndTpZ = config.getInt("headwars.game-end.location.x", 0);
+        int gameEndTpY = config.getInt("headwars.game-end.location.y", 100);
+        int gameEndTpZ = config.getInt("headwars.game-end.location.z", 0);
         Location gameEndLocation;
 
         if (gameEndAction.equals("teleport")) {

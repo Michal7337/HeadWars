@@ -180,11 +180,19 @@ public class HeadWarsGame implements Listener {
 
     };
 
-    private int teamAddingNumber;
-    public void addPlayer(Player player) {
+    public boolean canJoin(Player player) {
 
-        if (isStarted) return;
-        if (players.size() == maxPlayers) return;
+        return !isStarted && !HeadWarsGameManager.playersInGames.containsKey(player) && players.size() != maxPlayers && !players.contains(player);
+
+    }
+
+    private int teamAddingNumber;
+    public boolean addPlayer(Player player) {
+
+        if (isStarted) return false;
+        if (HeadWarsGameManager.playersInGames.containsKey(player)) {player.sendRichMessage("<red>You already are in a game!"); return false;}
+        if (players.size() == maxPlayers) {player.sendRichMessage("<red>This game is full!"); return false;}
+        if (players.contains(player)) {player.sendRichMessage("<red>You already are in this game!"); return false;}
 
         teams.get(teamAddingNumber).players().add(player);
         playerTeams.put(player, teams.get(teamAddingNumber));
@@ -199,10 +207,13 @@ public class HeadWarsGame implements Listener {
         if (HeadWars.clearInventoriesBeforeGame) player.getInventory().clear();
         player.clearActivePotionEffects();
         player.setHealth(20);
+        player.setGameMode(GameMode.SURVIVAL);
 
         immunePlayers.add(player); // not allow combat before game start
 
         if (players.size() == maxPlayers) startCountdown();
+
+        return true;
 
     }
 
@@ -529,6 +540,10 @@ public class HeadWarsGame implements Listener {
         return playerTeams;
     }
 
+    public HeadWarsMap getMap() {
+        return map;
+    }
+
     private final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
     private void handleBlockUpgrade(Block block, Player player) {
 
@@ -630,7 +645,7 @@ public class HeadWarsGame implements Listener {
             Bukkit.getScheduler().runTaskTimer(plugin, task -> {
 
                 player.showTitle(Title.title(Component.text("YOU DIED!", NamedTextColor.YELLOW), Component.text("Respawn in: " + secs)));
-                player.playSound(Sound.sound().type(Key.key("minecraft:block.note_block.hat")).volume(1).build(), Sound.Emitter.self());
+                player.playSound(Sound.sound(Key.key("minecraft:block.note_block.hat"), Sound.Source.MASTER, 1000, 1));
                 secs.getAndDecrement();
 
                 if (secs.get() == 0) task.cancel();
