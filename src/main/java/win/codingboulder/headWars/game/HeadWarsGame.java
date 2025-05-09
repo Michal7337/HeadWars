@@ -104,9 +104,8 @@ public class HeadWarsGame implements Listener {
 
     }
 
-    private final BukkitRunnable runEverySecondTask = new BukkitRunnable() {
-
-        public int gameTimer = 0;
+    public int gameTimer = 0;
+    public final BukkitRunnable runEverySecondTask = new BukkitRunnable() {
 
         public String nextEvent = "Bases Open";
         public int nextEventTime = 300;
@@ -533,8 +532,6 @@ public class HeadWarsGame implements Listener {
     private final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
     private void handleBlockUpgrade(Block block, Player player) {
 
-        for (GameTeam team : teams) if (!isBlockInArea(block, team.mapTeam().getBasePerimeter())) return;
-
         Material blockMat;
         if (Util.isWool(block)) blockMat = Material.WHITE_WOOL; else blockMat = block.getType();
         if (ResourceGenerator.blockUpgradeMaterials.containsKey(blockMat)) {
@@ -688,7 +685,7 @@ public class HeadWarsGame implements Listener {
         if (!block.getWorld().equals(world)) return;
         if (event.getPlayer().getGameMode() == GameMode.SPECTATOR) return;
 
-        if (player.isSneaking() && Objects.equals(event.getHand(), EquipmentSlot.HAND)) handleBlockUpgrade(block, event.getPlayer());
+        if (player.isSneaking() && Objects.equals(event.getHand(), EquipmentSlot.HAND) && isBlockInArea(block, playerTeams.get(player).mapTeam().getBasePerimeter())) handleBlockUpgrade(block, event.getPlayer());
 
         Location location = block.getLocation();
 

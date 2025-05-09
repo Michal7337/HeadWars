@@ -1,6 +1,5 @@
 package win.codingboulder.headWars;
 
-import com.mojang.brigadier.LiteralMessage;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -477,6 +476,29 @@ public class HeadWarsCommand {
                             }))
                     )
 
+                    .then(literal("admin")
+                        .then(argument("game", StringArgumentType.word())
+                            .suggests((context, builder) -> {
+                                HeadWarsGameManager.activeGameNames.keySet().forEach(builder::suggest);
+                                return builder.buildFuture();
+                            })
+
+                            .then(literal("set-game-time")
+                                .then(argument("time", IntegerArgumentType.integer(0))
+                                    .executes(context -> {
+
+                                        HeadWarsGame game = HeadWarsGameManager.activeGameNames.get(context.getArgument("game", String.class));
+                                        if (game == null) {
+                                            context.getSource().getSender().sendRichMessage("<red>That game doesn't exist!");
+                                            return 1;
+                                        }
+
+                                        game.gameTimer = context.getArgument("time", Integer.class);
+
+                                        return 1;
+
+                                    })))))
+
                 )
 
                 .then(literal("config")
@@ -880,6 +902,15 @@ public class HeadWarsCommand {
 
                     )
 
+                    .then(literal("reload-config")
+                        .executes(context -> {
+
+                            HeadWars.getInstance().loadConfig();
+
+                            return 1;
+
+                        }))
+
                 )
 
                 .build()
@@ -909,14 +940,6 @@ public class HeadWarsCommand {
         return team;
 
     }
-
-    public static CompletableFuture<Suggestions> headWarsMapSuggestion(@NotNull CommandContext<CommandSourceStack> context, @NotNull SuggestionsBuilder builder) {
-
-        HeadWarsMapManager.loadedMaps().keySet().forEach(map -> builder.suggest(map, new LiteralMessage("map ID")));
-        return builder.buildFuture();
-
-    }
-
     public static CompletableFuture<Suggestions> headWarsTeamSuggestion(@NotNull CommandContext<CommandSourceStack> context, @NotNull SuggestionsBuilder builder) {
 
         HeadWarsMap map = context.getArgument("map", HeadWarsMap.class);
