@@ -47,6 +47,7 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("armor_boots", new armor(EquipmentSlot.FEET));
 
         customItemHandlers.put("upgrade_genLimit", new upgrade_genLimit());
+        customItemHandlers.put("upgrade_protection", new upgrade_protection());
 
     }
 
@@ -242,7 +243,7 @@ public class ShopGui implements InventoryHolder, Listener {
 
     public static void setItemMenu(@NotNull ItemStack item, String menu) {
 
-        item.editPersistentDataContainer(pdc -> pdc.set(itemIdKey, PersistentDataType.STRING, menu));
+        item.editPersistentDataContainer(pdc -> pdc.set(shopMenuKey, PersistentDataType.STRING, menu));
 
     }
 

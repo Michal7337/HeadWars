@@ -32,7 +32,6 @@ import win.codingboulder.headWars.util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public class ResourceGenerator extends BukkitRunnable implements Listener {

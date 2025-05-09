@@ -24,6 +24,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -745,9 +746,17 @@ public class HeadWarsGame implements Listener {
         if (clickGenerators.containsKey(block.getLocation().toBlock())) event.setCancelled(true);
         if (isBlockAHead(block)) event.setCancelled(true);
 
-        teams.forEach(team -> {
-            if (team.unbrokenHeads().contains(block.getLocation().toBlock())) event.setCancelled(true);
-        });
+    }
+
+    @EventHandler
+    public void onWaterFlow(@NotNull BlockFromToEvent event) {
+
+        Block block = event.getToBlock();
+        if (block.getWorld() != world) return;
+
+        if (isBlockProtected(block)) event.setCancelled(true);
+        if (clickGenerators.containsKey(block.getLocation().toBlock())) event.setCancelled(true);
+        if (isBlockAHead(block)) event.setCancelled(true);
 
     }
 

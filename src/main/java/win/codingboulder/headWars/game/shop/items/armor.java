@@ -79,7 +79,7 @@ public class armor implements CustomShopItem {
             return maxTierArmor;
         }
 
-        ItemStack renderedItem = inventory.getItem(armorSlot).withType(upgradeData.key());
+        ItemStack renderedItem = inventory.getItem(armorSlot).isEmpty() ? ItemStack.of(defaultArmor.get(armorSlot).key()) : inventory.getItem(armorSlot).withType(upgradeData.key());
 
         ShopGui.setItemAction(renderedItem, "buy");
         ShopGui.setItemId(renderedItem, ShopGui.getItemId(shopItem));

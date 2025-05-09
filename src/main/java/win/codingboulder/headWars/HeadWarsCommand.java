@@ -710,6 +710,7 @@ public class HeadWarsCommand {
                                         ItemStack item = player.getInventory().getItemInMainHand();
 
                                         ShopGui.setItemMenu(item, StringArgumentType.getString(context, "menu"));
+                                        ShopGui.setItemAction(item, "open-menu");
 
                                         return 1;
                                     }))
