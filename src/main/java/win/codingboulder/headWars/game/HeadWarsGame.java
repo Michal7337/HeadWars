@@ -195,7 +195,13 @@ public class HeadWarsGame implements Listener {
         HeadWarsGameManager.playersInGames.put(player, this);
 
         player.teleport(map.lobbySpawn().asPosition().toLocation(world));
+
         player.setRespawnLocation(map.lobbySpawn().asPosition().toLocation(world), true);
+        if (HeadWars.clearInventoriesBeforeGame) player.getInventory().clear();
+        player.clearActivePotionEffects();
+        player.setHealth(20);
+
+        immunePlayers.add(player); // not allow combat before game start
 
         if (players.size() == maxPlayers) startCountdown();
 
@@ -236,6 +242,7 @@ public class HeadWarsGame implements Listener {
 
         liveTeams.addAll(teams);
         playerTeams.forEach((player, gameTeam) -> player.teleport(gameTeam.mapTeam().getSpawnPosition().asPosition().toLocation(world)));
+        immunePlayers.clear();
 
         playerTeams.forEach((player, team) -> {
 
@@ -394,7 +401,12 @@ public class HeadWarsGame implements Listener {
 
     public void handleGameStop() {
 
-        players.forEach(HeadWarsGameManager.playersInGames::remove);
+        players.forEach(player -> {
+            HeadWarsGameManager.playersInGames.remove(player);
+            player.getInventory().clear();
+            player.clearActivePotionEffects();
+            player.setHealth(20);
+        });
 
         if (HeadWars.gameEndAction.equals("teleport")) players.forEach(player -> player.teleport(HeadWars.gameEndTpLocation));
         else players.forEach(player -> player.kick(MiniMessage.miniMessage().deserialize("<red>The game has stopped")));
@@ -521,7 +533,7 @@ public class HeadWarsGame implements Listener {
     private final HashMap<Player, Block> pendingConfirmUpgrades = new HashMap<>();
     private void handleBlockUpgrade(Block block, Player player) {
 
-        for (GameTeam team : teams) if (isBlockInArea(block, team.mapTeam().getBasePerimeter())) return;
+        for (GameTeam team : teams) if (!isBlockInArea(block, team.mapTeam().getBasePerimeter())) return;
 
         Material blockMat;
         if (Util.isWool(block)) blockMat = Material.WHITE_WOOL; else blockMat = block.getType();

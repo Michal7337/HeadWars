@@ -6,6 +6,10 @@ headwars:
   # Specifies if the game exclusive chat should be enabled. Disable this if it breaks any chat plugins, but this will mean the messages of players in games will be visible server-wide.
   enable-game-chat: true
 
+  # Specifies if players' inventories should be cleared before a game starts. Note that the items aren't saved and will be lost.
+  # If you disable this you will need a different solution for managing player inventories.
+  clear-inventories-before-game: true
+
   # Specifies what happens to players after a game ends
   game-end:
     # The action to do. The possible values are:

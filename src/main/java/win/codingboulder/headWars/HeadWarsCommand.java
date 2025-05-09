@@ -454,6 +454,29 @@ public class HeadWarsCommand {
                             })
                         )
                     )
+
+                    .then(literal("stop")
+                        .then(argument("game", StringArgumentType.word())
+                            .suggests((context, builder) -> {
+                                HeadWarsGameManager.activeGameNames.keySet().forEach(builder::suggest);
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> {
+
+                                HeadWarsGame game = HeadWarsGameManager.activeGameNames.get(context.getArgument("game", String.class));
+                                if (game == null) {
+                                    context.getSource().getSender().sendRichMessage("<red>That game doesn't exist!");
+                                    return 1;
+                                }
+
+                                game.handleGameStop();
+                                context.getSource().getSender().sendRichMessage("<green>The game has been stopped");
+
+                                return 1;
+
+                            }))
+                    )
+
                 )
 
                 .then(literal("config")

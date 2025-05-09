@@ -73,6 +73,7 @@ public final class HeadWars extends JavaPlugin {
     public static String gameEndAction;
     public static Location gameEndTpLocation;
     public static boolean isGameChatEnabled;
+    public static boolean clearInventoriesBeforeGame;
 
     public void loadConfig() {
 
@@ -103,6 +104,7 @@ public final class HeadWars extends JavaPlugin {
 
         serverName = config.getString("headwars.server-name", "codingboulder.win");
         isGameChatEnabled = config.getBoolean("headwars.enable-game-chat", true);
+        clearInventoriesBeforeGame = config.getBoolean("headwars.clear-inventories-before-game", true);
 
     }
 
