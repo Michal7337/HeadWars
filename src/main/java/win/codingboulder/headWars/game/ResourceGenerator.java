@@ -19,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.ItemMergeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -52,14 +53,21 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         this.block = block;
         this.type = type;
 
-        //if (type != null && !type.tiers().isEmpty() && block != null) this.runTaskTimer(HeadWars.getInstance(), 20, type.tiers().get(0).speed());
-
     }
+
+    private final ArrayList<Item> spawnedItems = new ArrayList<>();
+    private int spawnedItemsNum = 0;
 
     @Override
     public void run() {
 
+        spawnedItems.forEach(it -> {if (!it.isValid()) spawnedItemsNum -= it.getItemStack().getAmount();});
+        spawnedItems.removeIf(it -> !it.isValid());
+
+        if (type.itemLimit() > 0 && spawnedItemsNum >= type().itemLimit()) return;
         Item item = block.getWorld().dropItem(block.getLocation().add(0, 1, 0).toCenterLocation(), type.resource(), item1 -> item1.setVelocity(new Vector()));
+        spawnedItems.add(item);
+        spawnedItemsNum += item.getItemStack().getAmount();
 
     }
 
@@ -114,6 +122,18 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
         generators.put(block, generator);
 
     }
+
+    @EventHandler
+    public void onItemMerge(@NotNull ItemMergeEvent event) {
+
+        Item merged = event.getEntity();
+        Item target = event.getTarget();
+
+        if (spawnedItems.contains(target)) spawnedItems.remove(merged);
+
+    }
+
+
 
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {

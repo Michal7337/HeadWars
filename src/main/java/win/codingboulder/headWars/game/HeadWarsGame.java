@@ -419,6 +419,7 @@ public class HeadWarsGame implements Listener {
             player.getInventory().clear();
             player.clearActivePotionEffects();
             player.setHealth(20);
+            player.setGameMode(GameMode.SURVIVAL);
         });
 
         if (HeadWars.gameEndAction.equals("teleport")) players.forEach(player -> player.teleport(HeadWars.gameEndTpLocation));
