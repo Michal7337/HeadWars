@@ -40,6 +40,7 @@ public class ShopGui implements InventoryHolder, Listener {
         customItemHandlers.put("wool", new wool());
         customItemHandlers.put("tool_pickaxe", new tool_pickaxe());
         customItemHandlers.put("sword", new sword());
+        customItemHandlers.put("flipcard", new flipcard());
 
         customItemHandlers.put("armor_helmet", new armor(EquipmentSlot.HEAD));
         customItemHandlers.put("armor_chestplate", new armor(EquipmentSlot.CHEST));
