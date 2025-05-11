@@ -397,7 +397,7 @@ public class HeadWarsGame implements Listener {
         allPlayersAudience.sendMessage(Component.text("Bases have been opened!", NamedTextColor.DARK_AQUA, TextDecoration.BOLD));
         areBasesOpen = true;
 
-        map.emeraldGenerators().forEach(pos -> new ResourceGenerator(pos.getBlock(world), GeneratorType.registeredTypes.get("emerald")));
+        map.emeraldGenerators().forEach(pos -> ResourceGenerator.placeGenerator(pos.getBlock(world), GeneratorType.registeredTypes.get("emerald")));
 
     }
 

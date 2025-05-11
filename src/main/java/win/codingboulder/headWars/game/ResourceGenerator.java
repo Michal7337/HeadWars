@@ -106,6 +106,15 @@ public class ResourceGenerator extends BukkitRunnable implements Listener {
 
     }
 
+    public static void placeGenerator(Block block, GeneratorType type) {
+
+        if (type == null || block == null) return;
+        ResourceGenerator generator = new ResourceGenerator(block, type);
+        generator.runTaskTimer(HeadWars.getInstance(), 20, generator.generatorTier().speed());
+        generators.put(block, generator);
+
+    }
+
     @EventHandler
     public void onBlockPlace(@NotNull BlockPlaceEvent event) {
 
