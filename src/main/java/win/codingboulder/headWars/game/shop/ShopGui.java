@@ -48,6 +48,7 @@ public class ShopGui implements InventoryHolder, Listener {
 
         customItemHandlers.put("upgrade_genLimit", new upgrade_genLimit());
         customItemHandlers.put("upgrade_protection", new upgrade_protection());
+        customItemHandlers.put("upgrade_sharpness", new upgrade_sharpness());
 
     }
 

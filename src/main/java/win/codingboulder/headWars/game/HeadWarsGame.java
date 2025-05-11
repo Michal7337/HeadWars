@@ -3,6 +3,7 @@ package win.codingboulder.headWars.game;
 import com.destroystokyo.paper.event.block.BlockDestroyEvent;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.DyedItemColor;
+import io.papermc.paper.datacomponent.item.ItemEnchantments;
 import io.papermc.paper.datacomponent.item.Unbreakable;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.math.BlockPosition;
@@ -18,6 +19,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.title.Title;
 import org.bukkit.*;
 import org.bukkit.block.Block;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -582,6 +584,7 @@ public class HeadWarsGame implements Listener {
         player.teleport(map.lobbySpawn().asPosition().toLocation(world));
         player.setGameMode(GameMode.SPECTATOR);
         PlayerInventory inventory = player.getInventory();
+        GameTeam team = playerTeams.get(player);
 
         ItemStack[] armor = inventory.getArmorContents();
 
@@ -607,8 +610,13 @@ public class HeadWarsGame implements Listener {
             }
 
             if (ResourceGenerator.swordTiers.contains(itemMaterial)) {
+
+                ItemStack sword = item.withType(ResourceGenerator.swordTiers.getFirst());
+                int sharp = team.purchasedUpgrades.getOrDefault("upgrade_sharpness", 0);
+                if (sharp != 0) sword.setData(DataComponentTypes.ENCHANTMENTS, ItemEnchantments.itemEnchantments(Map.of(Enchantment.SHARPNESS, sharp), true));
                 newInventory[i] = item.withType(ResourceGenerator.swordTiers.getFirst());
                 continue;
+
             }
 
             if (itemMaterial.equals(Material.SHEARS)) {
